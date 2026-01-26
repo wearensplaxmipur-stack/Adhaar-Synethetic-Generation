@@ -1,10 +1,13 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../model/adhaar_model.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -52,6 +55,32 @@ class _A4PrintPageState extends State<A4PrintPage> {
 
     await Printing.layoutPdf(onLayout: (_) async => pdf.save());
   }
+  Future<void> shareA4Pdf() async {
+    final bytes = await captureWidget();
+    final pdf = pw.Document();
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        build: (context) {
+          return pw.Center(
+            child: pw.Image(pw.MemoryImage(bytes), fit: pw.BoxFit.contain),
+          );
+        },
+      ),
+    );
+
+    final dir = await getTemporaryDirectory();
+    final file = File('${dir.path}/adhaar_${DateTime.now().millisecondsSinceEpoch}.pdf');
+
+    await file.writeAsBytes(await pdf.save());
+
+    await Share.shareXFiles(
+      [XFile(file.path)],
+      text: 'Generated Aadhaar PDF',
+    );
+  }
+
 // ================= MODEL =================
 // ================= GLOBAL TEXT FUNCTION =================
   Widget pText({
@@ -156,6 +185,45 @@ class _A4PrintPageState extends State<A4PrintPage> {
         onPressed: printA4,
         child: const Icon(Icons.print),
       ),
+      persistentFooterButtons: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            InkWell(
+              onTap: printA4,
+              child: Container(
+                width: w/2-10,
+                height: 50,
+                color: Colors.red,
+                child: Row(
+                  mainAxisAlignment:MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.print,color: Colors.white,),
+                    SizedBox(width: 10,),
+                    Text("Print Pdf",style: TextStyle(color: Colors.white,fontWeight: FontWeight.w900),)
+                  ],
+                ),
+              ),
+            ),
+            InkWell(
+              onTap: shareA4Pdf,
+              child: Container(
+                width: w/2-10,
+                height: 50,
+                color: Colors.blue.shade800,
+                child: Row(
+                  mainAxisAlignment:MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.share,color: Colors.white,),
+                    SizedBox(width: 10,),
+                    Text("Share Pdf",style: TextStyle(color: Colors.white,fontWeight: FontWeight.w900),)
+                  ],
+                ),
+              ),
+            ),
+          ],
+        )
+      ],
       body: SingleChildScrollView(
         child: Center(
           child: RepaintBoundary(

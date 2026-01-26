@@ -8,7 +8,9 @@
 
 
 
+import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:adhaar/admin/see_all.dart';
+import 'package:adhaar/card/adhaar/address/default_address.dart';
 import 'package:adhaar/card/adhaar/adhaar.dart';
 import 'package:adhaar/card/print/get_image.dart';
 import 'package:adhaar/main.dart';
@@ -18,6 +20,8 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../global.dart' show Global;
 
 class Home extends StatefulWidget {
   final String username;
@@ -104,11 +108,57 @@ class _HomeState extends State<Home> {
         return shouldExit ?? false; // true = allow back
       },
       child: Scaffold(
-        backgroundColor: Colors.white,
         appBar: AppBar(
           backgroundColor: Colors.black,
-          title: Text("Home",style: TextStyle(color: Colors.white),),
+          iconTheme: IconThemeData(
+              color: Colors.white
+          ),
+          title:  Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: InkWell(
+              onTap: (){
+
+              },
+              child: Container(
+                width: w-100,
+                height: 45,
+                decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(25),
+                    color: Color(0xff222327)
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: Row(
+                    children: [
+                      Icon(Icons.print_rounded,color: Colors.white,),
+                      SizedBox(width: 10),
+                      Text("Print Adhaar",style: TextStyle(color: Colors.white,fontWeight: FontWeight.w800,fontSize: 16),)
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          leading: Builder(
+            builder: (context) => Padding(
+              padding: const EdgeInsets.only(left: 4.0,top: 4,bottom: 4),
+              child: InkWell(
+                  onTap: (){
+                    Navigator.push(context,MaterialPageRoute(builder: (_)=>AdhaarFormPage()));
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        image: DecorationImage(image: AssetImage("assets/logo.jpg"))
+                    ),
+                  )
+              ),
+            ),
+          ),
           actions: [
+            IconButton(onPressed: (){
+              AdaptiveTheme.of(context).toggleThemeMode();
+            }, icon: Icon(Icons.sunny,color: Colors.white,)),
             IconButton(onPressed: (){
               showDialog(
                 context: context,
@@ -143,7 +193,8 @@ class _HomeState extends State<Home> {
                   );
                 },
               );
-            }, icon: Icon(Icons.login,color: Colors.red,))
+            }, icon: Icon(Icons.login,color: Colors.red,)),
+            SizedBox(width: 15,),
           ],
         ),
         body: Column(
@@ -155,7 +206,8 @@ class _HomeState extends State<Home> {
                 image: DecorationImage(image: AssetImage("assets/google.png"))
               ),
             ),
-        Center(
+            SizedBox(height: 10,),
+            Center(
         child: Container(
         width: w-15,
           decoration: BoxDecoration(
@@ -185,7 +237,7 @@ class _HomeState extends State<Home> {
                           onTap: (){
                             Navigator.push(context,MaterialPageRoute(builder: (_)=>GetImage(full: true)));
                           },
-                          child: q(context,"assets/images.png","Landscape A4")),
+                          child: q(context,"assets/landscape.gif","Landscape A4")),
                       widget.username=="Atif5050"?InkWell(
                           onTap: (){
                             Navigator.push(context,MaterialPageRoute(builder: (_)=>SeeAllAdmin(cons: s1,)));
@@ -194,7 +246,7 @@ class _HomeState extends State<Home> {
                           onTap: (){
                             Navigator.push(context,MaterialPageRoute(builder: (_)=>GetImage(full: false)));
                           },
-                          child: q(context,"assets/images (1).png","Portrait A4")),
+                          child: q1(context,"assets/portrait.gif","Portrait A4")),
                       InkWell(
                           onTap: () async {
                             final ImagePicker picker = ImagePicker();
@@ -222,7 +274,7 @@ class _HomeState extends State<Home> {
                               }
                             }
                           },
-                          child: q(context,"assets/human.jpg","Passport Photo")),
+                          child: q(context,"assets/photo.gif","Passport Photo")),
                     ],
                   ),
                   SizedBox(height: 9,),
@@ -231,7 +283,59 @@ class _HomeState extends State<Home> {
             ),
           ),
         ),
-      )
+      ),
+            SizedBox(height: 15,),
+            Center(
+              child: Container(
+                width: w-15,
+                decoration: BoxDecoration(
+                    border: Border.all(
+                        color: Colors.grey.shade200
+                    ),
+                    borderRadius: BorderRadius.circular(10)
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 10.0,bottom: 15),
+                  child: Center(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("    Settings",style: TextStyle(fontWeight: FontWeight.w700),textAlign: TextAlign.start,),
+                        SizedBox(height: 9,),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            InkWell(
+                                onTap: (){
+                                  AdaptiveTheme.of(context).toggleThemeMode();
+                                },
+                                child: q1(context,"assets/toggle.gif","Toggle Theme")),
+                            InkWell(
+                                onTap: (){
+                                  Navigator.push(context,MaterialPageRoute(builder: (_)=>DefaultAddress(hindi: false,)));
+                                },
+                                child: q(context,"assets/address.png","Address English")),
+                           InkWell(
+                                onTap: (){
+                                  Navigator.push(context,MaterialPageRoute(builder: (_)=>DefaultAddress(hindi: true)));
+                                },
+                                child: q(context,"assets/address2.png","Address English")),
+                            InkWell(
+                                onTap: () async {
+
+                                },
+                                child: q(context,"assets/setting.gif","Form Setting")),
+                          ],
+                        ),
+                        SizedBox(height: 9,),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            )
+
           ]
         ),
       ),
@@ -246,12 +350,27 @@ class _HomeState extends State<Home> {
             height: d,
             decoration: BoxDecoration(
               color: Colors.white,
-
               borderRadius: BorderRadius.circular(10),
             ),
             child: Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Image.asset(asset, height: d-50,))),
+        SizedBox(height: 7),
+        Text(str, style: TextStyle(fontWeight: FontWeight.w400,fontSize: 9)),
+      ],
+    );
+  }
+  Widget q1(BuildContext context, String asset, String str) {
+    double d = MediaQuery.of(context).size.width / 4 - 35;
+    return Column(
+      children: [
+        Container(
+            width: d,
+            height: d,
+            decoration: BoxDecoration(
+              image: DecorationImage(image: AssetImage(asset),fit: BoxFit.cover),
+              borderRadius: BorderRadius.circular(10),
+            ),),
         SizedBox(height: 7),
         Text(str, style: TextStyle(fontWeight: FontWeight.w400,fontSize: 9)),
       ],

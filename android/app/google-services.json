@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "14620606519",
+    "project_id": "nsp2026",
+    "storage_bucket": "nsp2026.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:14620606519:android:7120254f2a875b931b7fb2",
+        "android_client_info": {
+          "package_name": "com.starwish.adhaar"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBhnEN9SWSJ2BbRxpvGY1Ia549VuzSffRM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:14620606519:android:0d1a89ba527a8e3f1b7fb2",
+        "android_client_info": {
+          "package_name": "com.starwish.nsp2026"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBhnEN9SWSJ2BbRxpvGY1Ia549VuzSffRM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

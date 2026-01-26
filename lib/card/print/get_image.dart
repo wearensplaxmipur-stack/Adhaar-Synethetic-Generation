@@ -49,6 +49,9 @@ class _GetImageState extends State<GetImage> {
   Uint8List? mypic, mypic2;
 
 
+  void initState(){
+    full = widget.full;
+  }
   @override
   Widget build(BuildContext context) {
     double w = MediaQuery.of(context).size.width;

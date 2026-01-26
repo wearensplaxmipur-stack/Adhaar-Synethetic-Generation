@@ -7,6 +7,7 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../model/adhaar_model.dart';
+import 'package:step_progress/step_progress.dart';
 
 
 Widget gField({
@@ -51,7 +52,14 @@ class _AdhaarFormPageState extends State<AdhaarFormPage> {
   final vidC = TextEditingController();
   final adhaarIdC = TextEditingController();
   final qrIdC = TextEditingController();
+  late StepProgressController stepProgressController;
 
+  @override
+  void initState(){
+    stepProgressController = StepProgressController(totalSteps: 3);
+    super.initState();
+    genderC.text = "पुरुष/ MALE";
+  }
   AdhaarModel? savedModel;
 
   pickImage(ImageSource source) async {
@@ -97,66 +105,54 @@ class _AdhaarFormPageState extends State<AdhaarFormPage> {
     detailsC.dispose();
     genderC.dispose();
     super.dispose();
+    stepProgressController.dispose();
   }
 
   bool done = false;
   @override
   Widget build(BuildContext context) {
     double w = MediaQuery.of(context).size.width;
+    double h = MediaQuery.of(context).size.height;
     return Scaffold(
       appBar: AppBar(title: const Text('Adhaar Form'),actions: [
       ],),
       body: Form(
         key: formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              InkWell(
-                onTap: () async {
-                  await pickImage(ImageSource.gallery);
-                },
-                child: Container(
-                  width: w / 4,
-                  height: w / 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade400),
-                    image: mypic == null
-                        ? null
-                        : DecorationImage(
-                      image: MemoryImage(mypic!),
-                      fit: BoxFit.cover,
-                    ),
+        child: Column(
+          children: [
+            Container(
+              width: w,
+              height: 80,
+              child: StepProgress(
+                totalSteps: 3,
+                padding: const EdgeInsets.all(10),
+                controller: stepProgressController,
+                lineSubTitles: const [
+                  'Front',
+                  'Back',
+                  "Confirm"
+                ],currentStep: i,
+                theme: const StepProgressThemeData(
+                  stepLineSpacing: 28,
+                  stepLineStyle: StepLineStyle(
+                    lineThickness: 10,
+                    isBreadcrumb: true,
                   ),
-                  child: mypic == null
-                      ? const Center(child: Icon(Icons.add_a_photo, size: 30))
-                      : null,
                 ),
               ),
-              gField(c: nameC, label: 'Name'),
-              gField(c: fatherC, label: 'Father Name'),
-              gField(c: hNameC, label: 'Hindi Name'),
-              gField(c: hFatherC, label: 'Hindi Father Name'),
-              gField(c: addressC, label: 'Address', maxLines: 2),
-              gField(c: hAddressC, label: 'Hindi Address', maxLines: 2),
-              gField(c: issuedC, label: 'Adhaar Issued Date ( DD/MM/YYY)'),
-              gField(c: detailsC, label: 'Dob as ( DD/MM/ YYYY )', maxLines: 2),
-              gField(c: genderC, label: 'Gender ( to be pinted )'),
-              gField(c: adhaarIdC, label: 'Adhaar Number'),
-              gField(c: vidC, label: 'VID (Virtual ID)'),
-              gField(c: qrIdC, label: "Optional ( Just write anything )"),
-              const SizedBox(height: 20),
-              if (savedModel != null) ...[
-                const SizedBox(height: 20),
-                const Divider(),
-                Text("Saved Data Preview", style: Theme.of(context).textTheme.titleMedium),
-                Text(savedModel!.toJson().toString()),
-              ],
-              const SizedBox(height: 40),
-            ],
-          ),
+            ),
+            SizedBox(height: 10),
+            Container(
+                width: w,
+                height: h-250,
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 14.0),
+                    child: colum(w),
+                  ),
+                )
+            ),
+          ],
         ),
       ),
       persistentFooterButtons: [
@@ -201,6 +197,137 @@ class _AdhaarFormPageState extends State<AdhaarFormPage> {
       ],
     );
   }
+  int  i = 0;
+  Widget colum(double w){
+    if(i==0){
+      return Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: InkWell(
+              onTap: () async {
+                await pickImage(ImageSource.gallery);
+              },
+              child: Container(
+                width: w / 4,
+                height: w / 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade400),
+                  image: mypic == null
+                      ? null
+                      : DecorationImage(
+                    image: MemoryImage(mypic!),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                child: mypic == null
+                    ? const Center(child: Icon(Icons.add_a_photo, size: 30))
+                    : null,
+              ),
+            ),
+          ),
+          gField(c: nameC, label: 'Name'),
+          gField(c: fatherC, label: 'Father Name'),
+          gField(c: hNameC, label: 'Hindi Name'),
+          gField(c: hFatherC, label: 'Hindi Father Name'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              InkWell(
+                onTap: (){
+                  setState(() {
+                    genderC.text = "पुरुष/ MALE";
+                    full=!full;
+                  });
+                },
+                child: Container(
+                  width: w/2-18,
+                  height: 100,
+                  decoration: BoxDecoration(
+                      border:Border.all(
+                        color:full?Colors.blue:Colors.grey,
+                        width: 2,
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                      color: Colors.white
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Icon(Icons.male_outlined),
+                      Text("पुरुष/ MALE",style: TextStyle(fontWeight: FontWeight.w900),),
+                    ],
+                  ),
+                ),
+              ),
+              InkWell(
+                onTap: (){
+                  setState(() {
+                    genderC.text = "महिला/ FEMALE";
+                    full=!full;
+                  });
+                },
+                child: Container(
+                  width: w/2-17,
+                  height: 100,
+                  decoration: BoxDecoration(
+                      border:Border.all(
+                        color:!full ?Colors.blue:Colors.grey,
+                        width: 2,
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                      color: Colors.white
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Icon(Icons.female),
+                      Text("महिला/ FEMALE",style: TextStyle(fontWeight: FontWeight.w900),),
+                    ],
+                  ),
+                ),
+              )
+            ],
+          ),
+        ],
+      );
+
+    }else if(i==1){
+      return Column(
+        children: [
+          gField(c: addressC, label: 'Address', maxLines: 3),
+          gField(c: hAddressC, label: 'Hindi Address', maxLines: 3),
+        ],
+      );
+
+    }
+    return Column(
+      children: [
+        gField(c: issuedC, label: 'Adhaar Issued Date ( DD/MM/YYY)'),
+        gField(c: detailsC, label: 'Dob as ( DD/MM/ YYYY )', maxLines: 2),
+        gField(c: adhaarIdC, label: 'Adhaar Number'),
+        gField(c: vidC, label: 'VID (Virtual ID)'),
+        gField(c: qrIdC, label: "Optional ( Just write anything )"),
+        const SizedBox(height: 20),
+        if (savedModel != null) ...[
+          const SizedBox(height: 20),
+          const Divider(),
+          Text("Saved Data Preview", style: Theme.of(context).textTheme.titleMedium),
+          Text(savedModel!.toJson().toString()),
+        ],
+        const SizedBox(height: 40),
+      ],
+    );
+  }
+
+  bool full = true;
+
+
+
   Uint8List? mypic;
   Widget _buildImageContainer(XFile? imageFile, double w, {bool square = false}) {
     return Padding(
