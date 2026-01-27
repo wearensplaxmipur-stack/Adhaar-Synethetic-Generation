@@ -32,7 +32,7 @@ class _A4PrintPageState extends State<A4PrintPage> {
     RenderRepaintBoundary boundary =
     repaintKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
 
-    ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+    ui.Image image = await boundary.toImage(pixelRatio: 6.0);
     ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     return byteData!.buffer.asUint8List();
   }
@@ -46,7 +46,7 @@ class _A4PrintPageState extends State<A4PrintPage> {
         pageFormat: PdfPageFormat.a4,
         build: (context) {
           return pw.Center(
-            child: pw.Image(pw.MemoryImage(bytes), fit: pw.BoxFit.contain),
+            child: pw.Image(pw.MemoryImage(bytes), fit: pw.BoxFit.contain,dpi: 600),
           );
         },
       ),
@@ -82,7 +82,7 @@ class _A4PrintPageState extends State<A4PrintPage> {
         pageFormat: PdfPageFormat.a4,
         build: (context) {
           return pw.Center(
-            child: pw.Image(pw.MemoryImage(bytes), fit: pw.BoxFit.contain),
+            child: pw.Image(pw.MemoryImage(bytes), fit: pw.BoxFit.contain,dpi: 600),
           );
         },
       ),

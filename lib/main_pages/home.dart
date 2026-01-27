@@ -1,13 +1,3 @@
-
-
-
-
-
-
-
-
-
-
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:adhaar/admin/see_all.dart';
 import 'package:adhaar/card/adhaar/address/default_address.dart';
@@ -15,6 +5,7 @@ import 'package:adhaar/card/adhaar/adhaar.dart';
 import 'package:adhaar/card/print/get_image.dart';
 import 'package:adhaar/main.dart';
 import 'package:adhaar/passport/passport.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
@@ -46,12 +37,12 @@ class _HomeState extends State<Home> {
       return;
     }
 
-    // ✅ safe to read/write
     debugPrint("✅ Permission granted, can read/write");
   }
 
 
   Future<bool> requestStoragePermission() async {
+
     if (await Permission.photos.isDenied || await Permission.videos.isDenied) {
       final statuses = await [
         Permission.photos,
@@ -61,12 +52,10 @@ class _HomeState extends State<Home> {
       return statuses.values.every((s) => s.isGranted);
     }
 
-    // Android 12 and below
     if (await Permission.storage.isDenied) {
       final status = await Permission.storage.request();
       return status.isGranted;
     }
-
     return true;
   }
 
@@ -117,7 +106,7 @@ class _HomeState extends State<Home> {
             padding: const EdgeInsets.symmetric(vertical: 8.0),
             child: InkWell(
               onTap: (){
-
+                Navigator.push(context,MaterialPageRoute(builder: (_)=>AdhaarFormPage()));
               },
               child: Container(
                 width: w-100,
@@ -144,7 +133,6 @@ class _HomeState extends State<Home> {
               padding: const EdgeInsets.only(left: 4.0,top: 4,bottom: 4),
               child: InkWell(
                   onTap: (){
-                    Navigator.push(context,MaterialPageRoute(builder: (_)=>AdhaarFormPage()));
                   },
                   child: Container(
                     decoration: BoxDecoration(
@@ -199,12 +187,49 @@ class _HomeState extends State<Home> {
         ),
         body: Column(
           children:[
-            Container(
-              width: w-20,
-              height: 200,
-              decoration: BoxDecoration(
-                image: DecorationImage(image: AssetImage("assets/google.png"))
+            SizedBox(height: 10,),
+            CarouselSlider(
+              options: CarouselOptions(
+                height: 180,
+                aspectRatio: 16 / 9,
+                viewportFraction: 1,
+                initialPage: 0,
+                enableInfiniteScroll: true,
+                reverse: false,
+                autoPlay: true,
+                autoPlayInterval: Duration(seconds: 3),
+                autoPlayAnimationDuration: Duration(milliseconds: 800),
+                autoPlayCurve: Curves.fastOutSlowIn,
+                enlargeCenterPage: true,
+                enlargeFactor: 0.3,
+                scrollDirection: Axis.horizontal,
               ),
+              items:
+              [
+                "assets/gif.gif",
+                "assets/c28d5780-35fe-467f-a1da-7707a1677634.jpg",
+                "assets/1027b856-ff87-4f8d-b16f-f92581bcedb9.jpg"
+              ].map((i) {
+                return Builder(
+                  builder: (BuildContext context) {
+                    return Padding(
+                      padding: const EdgeInsets.all(1.0),
+                      child: Container(
+                        width: w - 15,
+                        height:180,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.black, width: 2),
+                          borderRadius: BorderRadius.circular(7),
+                          image: DecorationImage(
+                            image: AssetImage(i),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }).toList(),
             ),
             SizedBox(height: 10,),
             Center(

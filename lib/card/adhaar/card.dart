@@ -33,7 +33,7 @@ class _A4PrintPageState extends State<A4PrintPage> {
     RenderRepaintBoundary boundary =
     repaintKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
 
-    ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+    ui.Image image = await boundary.toImage(pixelRatio: 6.0);
     ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     return byteData!.buffer.asUint8List();
   }
@@ -47,7 +47,7 @@ class _A4PrintPageState extends State<A4PrintPage> {
         pageFormat: PdfPageFormat.a4,
         build: (context) {
           return pw.Center(
-            child: pw.Image(pw.MemoryImage(bytes), fit: pw.BoxFit.contain),
+            child: pw.Image(pw.MemoryImage(bytes), fit: pw.BoxFit.contain,dpi: 600),
           );
         },
       ),
@@ -64,7 +64,7 @@ class _A4PrintPageState extends State<A4PrintPage> {
         pageFormat: PdfPageFormat.a4,
         build: (context) {
           return pw.Center(
-            child: pw.Image(pw.MemoryImage(bytes), fit: pw.BoxFit.contain),
+            child: pw.Image(pw.MemoryImage(bytes), fit: pw.BoxFit.contain,dpi: 600),
           );
         },
       ),
@@ -92,6 +92,7 @@ class _A4PrintPageState extends State<A4PrintPage> {
     FontWeight fw = FontWeight.w400,
     Color color = Colors.black,
     int? maxLines,
+    String? fontFamily,
   }) {
     return Positioned(
       top: top,
@@ -99,7 +100,8 @@ class _A4PrintPageState extends State<A4PrintPage> {
       right: right,
       child: Text(
         text, overflow: TextOverflow.ellipsis,
-        style: TextStyle(fontSize: size, fontWeight: fw, color: color),
+        style: TextStyle(fontSize: size, fontWeight: fw, color: color,
+          fontFamily: fontFamily,),
       ),
     );
   }
@@ -114,6 +116,7 @@ class _A4PrintPageState extends State<A4PrintPage> {
     FontWeight fw = FontWeight.w400,
     Color color = Colors.black,
     int? maxLines,
+    String? fontFamily,
   }) {
     return Positioned(
       top: top,
@@ -122,8 +125,8 @@ class _A4PrintPageState extends State<A4PrintPage> {
       child: Text(
         text, overflow: TextOverflow.ellipsis,
         style: TextStyle(fontSize: size, fontWeight: fw, color: color,
-          fontFamily: 'IBMPlex',
-        ),
+          height: 0.9,
+          fontFamily: fontFamily,),
       ),
     );
   }
@@ -181,10 +184,6 @@ class _A4PrintPageState extends State<A4PrintPage> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('A4 Stack PDF Generator')),
-      floatingActionButton: FloatingActionButton(
-        onPressed: printA4,
-        child: const Icon(Icons.print),
-      ),
       persistentFooterButtons: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -255,25 +254,25 @@ class _A4PrintPageState extends State<A4PrintPage> {
                     left: x(0.03),
                     top: y(0.06),
                     child: RotatedBox(
-                      quarterTurns: 3, // 1=90°, 2=180°, 3=270°
+                      quarterTurns: 3,
                       child: Text(
                         "Issued Date : ${m.adhaarIssued}",
                         style: TextStyle(
-                          fontSize: 5,
-                          fontFamily: 'IBMPlex',
+                          fontSize: 4.8,
+                          fontFamily: 'NotoSerif',letterSpacing: 0.1
                         ),
                       ),
                     ),
                   ),
-                  pText(text: "${m.hindiName}", top: y(0.058), left: x(0.173)),
-                  epText(text: '${m.name}', top: y(0.068), left: x(0.173)),
-                  epText(text: m.details, top: y(0.078), left: x(0.253)),
+                  pText(text: "${m.hindiName}", top: y(0.06), left: x(0.173),fontFamily: "NotoSansDevanagari"),
+                  pText(text: '${m.name}', top: y(0.067), left: x(0.173),fontFamily: "LiberationSerif"),
+                  pText(text: m.details, top: y(0.078), left: x(0.253),fontFamily: "NotoSerifTamil"),
 
-                  epText(text: m.gender, top: y(0.089), left: x(0.173)),
+                  pText(text: m.gender, top: y(0.088), left: x(0.173),fontFamily: "LiberationSerif"),
 
-                  epText(text: '${m.address}', top: y(0.069), left: x(0.53)),
-                  pText(text: '${m.hindiAddress}', top: y(0.110), left: x(0.53)),
-                  pText(text: breakEvery4(m.adhaarId), top: y(0.189), left: x(0.173),fw: FontWeight.w900,size: 7.5),
+                  epText(text: '${m.address}', top: y(0.112), left: x(0.53),fontFamily: "LiberationSerif",size: 4.8),
+                  epText(text: '${m.hindiAddress}', top: y(0.072), left: x(0.53),fontFamily: "NotoSansDevanagari",size: 4.8),
+                  pText(text: breakEvery4(m.adhaarId), top: y(0.189), left: x(0.173),fw: FontWeight.w900,size: 7.5,fontFamily: "NotoSerif"),
                   Positioned(
                     left: x(0.78),top: y(0.0552),
                     child: Container(
@@ -283,12 +282,13 @@ class _A4PrintPageState extends State<A4PrintPage> {
                         child: Container(
                             width: w*0.18,
                             height: w*0.18,
-                            child: QrImageView(size: 150, data: qrData(m),))
+                            child: QrImageView(size: w*0.18, data: qrData(m),
+                              errorCorrectionLevel: QrErrorCorrectLevel.Q, // denser than H in many cases
+                            ))
                     ),
                   ),
-                  pText(text: breakEvery4(m.adhaarId), top: y(0.178), left: x(0.66),fw: FontWeight.w900,size: 7.5),
-                  pText(text:"VID : "+ breakEvery4(m.adhaarId), top: y(0.193), left: x(0.65),fw: FontWeight.w400,size: 6.5),
-
+                  pText(text: breakEvery4(m.adhaarId), top: y(0.178), left: x(0.66),fw: FontWeight.w900,size: 7.5,fontFamily: "NotoSerif"),
+                  pText(text:"VID : "+ breakEvery4(m.vid), top: y(0.193), left: x(0.62),fw: FontWeight.w400,size: 6.5,fontFamily: "NotoSerif"),
                 ],
               ),
             ),

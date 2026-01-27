@@ -30,7 +30,7 @@ class _A4GridPrintPageState extends State<A4GridPrintPassport> {
     RenderRepaintBoundary boundary =
     repaintKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
 
-    ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+    ui.Image image = await boundary.toImage(pixelRatio: 6.0);
     ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     return byteData!.buffer.asUint8List();
   }
@@ -45,7 +45,7 @@ class _A4GridPrintPageState extends State<A4GridPrintPassport> {
         pageFormat: PdfPageFormat.a4,
         build: (_) =>
             pw.Center(
-              child: pw.Image(pw.MemoryImage(bytes), fit: pw.BoxFit.contain),
+              child: pw.Image(pw.MemoryImage(bytes), fit: pw.BoxFit.contain,dpi: 300),
             ),
       ),
     );
@@ -64,7 +64,7 @@ class _A4GridPrintPageState extends State<A4GridPrintPassport> {
         pageFormat: PdfPageFormat.a4,
         build: (context) {
           return pw.Center(
-            child: pw.Image(pw.MemoryImage(bytes), fit: pw.BoxFit.contain),
+            child: pw.Image(pw.MemoryImage(bytes), fit: pw.BoxFit.contain,dpi: 300),
           );
         },
       ),
@@ -87,7 +87,6 @@ class _A4GridPrintPageState extends State<A4GridPrintPassport> {
     final double w = MediaQuery.of(context).size.width - 20;
     final double h = w * a4Ratio;
 
-    // duplicate images
     final List<Uint8List> images = List.generate(copies, (_) => widget.image);
 
     int crossAxisCount = 2; // fixed 2 grids
@@ -96,7 +95,6 @@ class _A4GridPrintPageState extends State<A4GridPrintPassport> {
     return Scaffold(
       appBar: AppBar(title: const Text('A4 Grid Image Print')),
 
-      // ================= FOOTER SLIDER =================
       persistentFooterButtons: [
         Column(
           children: [
@@ -104,7 +102,7 @@ class _A4GridPrintPageState extends State<A4GridPrintPassport> {
             Slider(
               value: copies.toDouble(),
               min: 2,
-              max: 12,
+              max: 25,
               divisions: 5,
               label: copies.toString(),
               onChanged: (v) {
@@ -163,26 +161,22 @@ class _A4GridPrintPageState extends State<A4GridPrintPassport> {
               width: w,
               height: h,
               color: Colors.white,
-              child: GridView.builder(
-                physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(12),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: crossAxisCount,
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
-                  childAspectRatio: (w / 2) / (h / rows),
-                ),
-                itemCount: images.length,
-                itemBuilder: (context, index) {
+              child: Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: List.generate(images.length, (index) {
                   return Container(
+                    width: photoWidthPt * (w / PdfPageFormat.a4.width),   // scale to screen
+                    height: photoHeightPt * (h / PdfPageFormat.a4.height),// scale to screen
                     decoration: BoxDecoration(
+                      border: Border.all(color: Colors.black12),
                     ),
                     child: Image.memory(
                       images[index],
-                      fit: BoxFit.contain,
+                      fit: BoxFit.cover,
                     ),
                   );
-                },
+                }),
               ),
             ),
           ),

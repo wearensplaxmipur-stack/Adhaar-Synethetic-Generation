@@ -105,11 +105,26 @@ flutter:
     - family: NotoSerif
       fonts:
         - asset: assets/fonts/NotoSerif-VariableFont_wdth,wght.ttf
-  #       - asset: fonts/Schyler-Italic.ttf
-  #         style: italic
+
     - family: IBMPlex
       fonts:
         - asset: assets/fonts/IBMPlexSansCondensed-Regular.ttf
+
+    - family: LiberationSerif
+      fonts:
+        - asset: assets/fonts/LiberationSerif-Regular.ttf
+
+    - family: NotoSansDevanagari
+      fonts:
+        - asset: assets/fonts/NotoSansDevanagari-VariableFont_wdth,wght.ttf
+
+    - family: NotoSerifTamil
+      fonts:
+        - asset: assets/fonts/NotoSerifTamil-VariableFont_wdth,wght.ttf
+
+          #       - asset: fonts/Schyler-Italic.ttf
+          #         style: italic
+
   #       - asset: fonts/TrajanPro_Bold.ttf
   #         weight: 700
   #

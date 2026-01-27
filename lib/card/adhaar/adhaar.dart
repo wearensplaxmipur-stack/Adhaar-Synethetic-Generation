@@ -2,12 +2,16 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:adhaar/card/adhaar/card.dart';
+import 'package:adhaar/global.dart';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../model/adhaar_model.dart';
 import 'package:step_progress/step_progress.dart';
+
+import 'address/default_address.dart';
 
 
 Widget gField({
@@ -51,7 +55,6 @@ class _AdhaarFormPageState extends State<AdhaarFormPage> {
   final genderC = TextEditingController();
   final vidC = TextEditingController();
   final adhaarIdC = TextEditingController();
-  final qrIdC = TextEditingController();
   late StepProgressController stepProgressController;
 
   @override
@@ -95,7 +98,6 @@ class _AdhaarFormPageState extends State<AdhaarFormPage> {
     nameC.dispose();
     vidC.dispose();
     adhaarIdC.dispose();
-    qrIdC.dispose();
     fatherC.dispose();
     hNameC.dispose();
     hFatherC.dispose();
@@ -113,91 +115,164 @@ class _AdhaarFormPageState extends State<AdhaarFormPage> {
   Widget build(BuildContext context) {
     double w = MediaQuery.of(context).size.width;
     double h = MediaQuery.of(context).size.height;
-    return Scaffold(
-      appBar: AppBar(title: const Text('Adhaar Form'),actions: [
-      ],),
-      body: Form(
-        key: formKey,
-        child: Column(
-          children: [
-            Container(
-              width: w,
-              height: 80,
-              child: StepProgress(
-                totalSteps: 3,
-                padding: const EdgeInsets.all(10),
-                controller: stepProgressController,
-                lineSubTitles: const [
-                  'Front',
-                  'Back',
-                  "Confirm"
-                ],currentStep: i,
-                theme: const StepProgressThemeData(
-                  stepLineSpacing: 28,
-                  stepLineStyle: StepLineStyle(
-                    lineThickness: 10,
-                    isBreadcrumb: true,
+    return WillPopScope(
+      onWillPop: () async {
+        final shouldExit = await showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(0),
+              ),
+              title: const Text("Close the Generator ?"),
+              content: const Text("Your Entries may not be Saved"),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text("Cancel"),
+                ),
+                ElevatedButton(
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStateProperty.all(Colors.red),
+                  ),
+                  onPressed: () async {
+                    Navigator.pop(context, true);
+                  },
+                  child: const Text(
+                    "OK",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+        return shouldExit ?? false; // true = allow back
+      },
+
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Adhaar Form'),actions: [
+        ],),
+        body: Form(
+          key: formKey,
+          child: Column(
+            children: [
+              Container(
+                width: w,
+                height: 80,
+                child: StepProgress(
+                  totalSteps: 3,
+                  padding: const EdgeInsets.all(10),
+                  controller: stepProgressController,
+                  lineSubTitles: const [
+                    'Front',
+                    'Back',
+                    "Confirm"
+                  ],
+                  theme: const StepProgressThemeData(
+                    stepLineSpacing: 28,
+                    stepLineStyle: StepLineStyle(
+                      lineThickness: 10,
+                      isBreadcrumb: true,
+                    ),
                   ),
                 ),
               ),
-            ),
-            SizedBox(height: 10),
-            Container(
-                width: w,
-                height: h-250,
-                child: SingleChildScrollView(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 14.0),
-                    child: colum(w),
-                  ),
-                )
-            ),
-          ],
-        ),
-      ),
-      persistentFooterButtons: [
-        SizedBox(
-          width: double.infinity,
-          height: 50,
-          child: ElevatedButton(
-            onPressed: (){
-              if(mypic==null){
-                return ;
-              }
-                if (!formKey.currentState!.validate()) return;
-                AdhaarModel model = AdhaarModel(
-                  name: nameC.text.trim(),
-                  fatherName: fatherC.text.trim(),
-                  hindiName: hNameC.text.trim(),
-                  hindiFatherName: hFatherC.text.trim(),
-                  address: addressC.text.trim(),
-                  hindiAddress: hAddressC.text.trim(),
-                  adhaarIssued: issuedC.text.trim(),
-                  details: detailsC.text.trim(),
-                  gender: genderC.text.trim(),
-                  vid: vidC.text.trim(),
-                  adhaarId: adhaarIdC.text.trim(),
-                  qrId: qrIdC.text.trim(),
-                  photo: mypic,
-                );
-
-                setState(() => savedModel = model);
-
-                Navigator.push(context, MaterialPageRoute(builder: (_)=>A4PrintPage(model: model)));
-                debugPrint("SAVED ADHAADEL => ${model.toJson()}");
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Adhaar  Saved")),
-                );
-
-            },
-            child: const Text('SAVE'),
+              SizedBox(height: 10),
+              Container(
+                  width: w,
+                  height: h-250,
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 14.0),
+                      child: colum(w),
+                    ),
+                  )
+              ),
+            ],
           ),
         ),
-      ],
+        persistentFooterButtons: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              InkWell(
+                onTap: (){
+                  stepProgressController.previousStep();
+                  if(i==0){
+                    return ;
+                  }
+                  setState(() {
+                    i--;
+                  });
+                },
+                child: CircleAvatar(
+                  backgroundColor: i==0?Colors.grey.shade400:Colors.yellow,
+                  radius: 25,
+                  child: Icon(Icons.arrow_back,color: Colors.black,),
+                ),
+              ),
+              InkWell(
+                onTap: (){
+                  if(i !=2){
+                    stepProgressController.nextStep();
+                    setState(() {
+                      i++;
+                    });
+                    return ;
+                  }
+                  if(mypic==null){
+                    const snackBar = SnackBar(content: Text('Please put Picture'));
+
+                    // Find the ScaffoldMessenger in the widget tree
+                    // and use it to show a SnackBar.
+                    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                    return ;
+                  }
+                  if (!formKey.currentState!.validate()){
+                    const snackBar = SnackBar(content: Text('Please fill all form data'));
+
+                    // Find the ScaffoldMessenger in the widget tree
+                    // and use it to show a SnackBar.
+                    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                    return ;
+                  }
+                  AdhaarModel model = AdhaarModel(
+                    name: nameC.text.trim(),
+                    fatherName: fatherC.text.trim(),
+                    hindiName: hNameC.text.trim(),
+                    hindiFatherName: hFatherC.text.trim(),
+                    address: addressC.text.trim(),
+                    hindiAddress: hAddressC.text.trim(),
+                    adhaarIssued: issuedC.text.trim(),
+                    details: detailsC.text.trim(),
+                    gender: genderC.text.trim(),
+                    vid: vidC.text.trim(),
+                    adhaarId: adhaarIdC.text.trim(),
+                    qrId:"",
+                    photo: mypic,
+                  );
+
+                  setState(() => savedModel = model);
+
+                  Navigator.push(context, MaterialPageRoute(builder: (_)=>A4PrintPage(model: model)));
+                  debugPrint("SAVED ADHAADEL => ${model.toJson()}");
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Adhaar  Saved")),
+                  );
+
+                },
+                child: Global.button(w-70, "Continue"),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
   int  i = 0;
+  bool english = false, hindi = false;
   Widget colum(double w){
     if(i==0){
       return Column(
@@ -212,7 +287,7 @@ class _AdhaarFormPageState extends State<AdhaarFormPage> {
                 width: w / 4,
                 height: w / 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
+                  color: Colors.grey.shade500,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: Colors.grey.shade400),
                   image: mypic == null
@@ -251,7 +326,6 @@ class _AdhaarFormPageState extends State<AdhaarFormPage> {
                         width: 2,
                       ),
                       borderRadius: BorderRadius.circular(10),
-                      color: Colors.white
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -279,7 +353,6 @@ class _AdhaarFormPageState extends State<AdhaarFormPage> {
                         width: 2,
                       ),
                       borderRadius: BorderRadius.circular(10),
-                      color: Colors.white
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -295,30 +368,115 @@ class _AdhaarFormPageState extends State<AdhaarFormPage> {
           ),
         ],
       );
-
     }else if(i==1){
       return Column(
         children: [
+              Row(
+                children: [
+                  Container(
+                    width: w-60,
+                    height: 50,
+                    child: CheckboxListTile(
+                      title: Text("Use Default English Address"),
+                      value: english,
+                      onChanged: (newValue) {
+                        setState(() async {
+                          if(newValue==null){
+                            return ;
+                          }
+                          if(newValue){
+                            final SharedPreferences prefs = await SharedPreferences.getInstance();
+                            String str = await prefs.getString('english')??"";
+                            setState(() {
+                              english=newValue;
+                              addressC.text = str;
+                            });
+                          }else{
+                            setState(() {
+                              english=newValue;
+                              addressC.text="";
+                            });
+                          }
+                        });
+                      },
+                      controlAffinity: ListTileControlAffinity.leading,  //  <-- leading Checkbox
+                    ),
+                  ),Spacer(),
+                  InkWell(
+                      onTap: () async {
+                        String? str = await Navigator.push(context,MaterialPageRoute(builder: (_)=>DefaultAddress(hindi: false,)));
+                        if(str==null){
+                          return ;
+                        }
+                        setState(() {
+                          addressC.text = str;
+                          english=true;
+                        });},
+                      child: Icon(Icons.edit_note_sharp,color: Colors.deepOrange,size: 30,)),
+                ],
+              ),
+          SizedBox(
+            height: 10,
+          ),
           gField(c: addressC, label: 'Address', maxLines: 3),
+          Row(
+            children: [
+              Container(
+                width: w-60,
+                height: 50,
+                child: CheckboxListTile(
+                  title: Text("Use Default Hindi Address"),
+                  value: hindi,
+                  onChanged: (newValue) {
+                    setState(() async {
+                      if(newValue==null){
+                        return ;
+                      }
+                      if(newValue){
+                        final SharedPreferences prefs = await SharedPreferences.getInstance();
+                        String str = await prefs.getString('hindi')??"";
+                        setState(() {
+                          hindi=newValue;
+                          hAddressC.text = str;
+                        });
+                      }else{
+                        setState(() {
+                          hindi=newValue;
+                          hAddressC.text="";
+                        });
+                      }
+                    });
+                  },
+                  controlAffinity: ListTileControlAffinity.leading,  //  <-- leading Checkbox
+                ),
+              ),Spacer(),
+              InkWell(
+                  onTap: () async {
+                    String? str = await Navigator.push(context,MaterialPageRoute(builder: (_)=>DefaultAddress(hindi: true,)));
+                    if(str==null){
+                      return ;
+                    }
+                    setState(() {
+                      hAddressC.text = str;
+                      hindi=true;
+                    });},
+                  child: Icon(Icons.edit_note_sharp,color: Colors.deepOrange,size: 30,)),
+            ],
+          ),
+          SizedBox(
+            height: 10,
+          ),
           gField(c: hAddressC, label: 'Hindi Address', maxLines: 3),
         ],
       );
-
     }
     return Column(
       children: [
+        const SizedBox(height: 15),
         gField(c: issuedC, label: 'Adhaar Issued Date ( DD/MM/YYY)'),
         gField(c: detailsC, label: 'Dob as ( DD/MM/ YYYY )', maxLines: 2),
         gField(c: adhaarIdC, label: 'Adhaar Number'),
         gField(c: vidC, label: 'VID (Virtual ID)'),
-        gField(c: qrIdC, label: "Optional ( Just write anything )"),
-        const SizedBox(height: 20),
-        if (savedModel != null) ...[
-          const SizedBox(height: 20),
-          const Divider(),
-          Text("Saved Data Preview", style: Theme.of(context).textTheme.titleMedium),
-          Text(savedModel!.toJson().toString()),
-        ],
         const SizedBox(height: 40),
       ],
     );
