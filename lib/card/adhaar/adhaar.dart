@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:flutter/foundation.dart';
 import '../../model/adhaar_model.dart';
 import 'package:step_progress/step_progress.dart';
 
@@ -70,6 +70,13 @@ class _AdhaarFormPageState extends State<AdhaarFormPage> {
     XFile? file = await picker.pickImage(source: source);
 
     if (file != null) {
+      if (kIsWeb) {
+        final bytes = await file.readAsBytes();
+        setState(() {
+          mypic = bytes;
+        });
+        return;
+      }
       final croppedFile = await ImageCropper().cropImage(
         sourcePath: file.path,
         uiSettings: [
@@ -223,17 +230,13 @@ class _AdhaarFormPageState extends State<AdhaarFormPage> {
                   }
                   if(mypic==null){
                     const snackBar = SnackBar(content: Text('Please put Picture'));
-
-                    // Find the ScaffoldMessenger in the widget tree
-                    // and use it to show a SnackBar.
+                    
                     ScaffoldMessenger.of(context).showSnackBar(snackBar);
                     return ;
                   }
                   if (!formKey.currentState!.validate()){
                     const snackBar = SnackBar(content: Text('Please fill all form data'));
 
-                    // Find the ScaffoldMessenger in the widget tree
-                    // and use it to show a SnackBar.
                     ScaffoldMessenger.of(context).showSnackBar(snackBar);
                     return ;
                   }

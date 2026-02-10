@@ -17,10 +17,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -50,19 +47,30 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBhnEN9SWSJ2BbRxpvGY1Ia549VuzSffRM',
-    appId: '1:14620606519:android:7120254f2a875b931b7fb2',
-    messagingSenderId: '14620606519',
-    projectId: 'nsp2026',
-    storageBucket: 'nsp2026.firebasestorage.app',
+    apiKey: 'AIzaSyAOnxA86zGGDbrhwB5Eu4oS_WPDUnYRs5s',
+    appId: '1:727974995113:android:6a864468378c85c1b1b5b8',
+    messagingSenderId: '727974995113',
+    projectId: 'aadhaar-nsp-2026',
+    storageBucket: 'aadhaar-nsp-2026.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCpRjrChdBLPLMQ8Bsq0ZjafLMOzft7xkU',
-    appId: '1:14620606519:ios:ad2ae441cadf6e3c1b7fb2',
-    messagingSenderId: '14620606519',
-    projectId: 'nsp2026',
-    storageBucket: 'nsp2026.firebasestorage.app',
+    apiKey: 'AIzaSyD_-hO7Ye5GioAVv3YD_7LOv1GYZ29nznI',
+    appId: '1:727974995113:ios:9a5e09d276a68900b1b5b8',
+    messagingSenderId: '727974995113',
+    projectId: 'aadhaar-nsp-2026',
+    storageBucket: 'aadhaar-nsp-2026.firebasestorage.app',
     iosBundleId: 'com.starwish.adhaar',
   );
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyBbwuSvfvDI26_6OnZ6hGv3UCGRKdgVlC0',
+    appId: '1:727974995113:web:51229e56b1808f52b1b5b8',
+    messagingSenderId: '727974995113',
+    projectId: 'aadhaar-nsp-2026',
+    authDomain: 'aadhaar-nsp-2026.firebaseapp.com',
+    storageBucket: 'aadhaar-nsp-2026.firebasestorage.app',
+    measurementId: 'G-JE5JD6YHZH',
+  );
+
 }

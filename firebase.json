@@ -1,1 +1,37 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"nsp2026","appId":"1:14620606519:android:7120254f2a875b931b7fb2","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"nsp2026","configurations":{"android":"1:14620606519:android:7120254f2a875b931b7fb2","ios":"1:14620606519:ios:ad2ae441cadf6e3c1b7fb2"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "aadhaar-nsp-2026",
+          "appId": "1:727974995113:android:6a864468378c85c1b1b5b8",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "aadhaar-nsp-2026",
+          "configurations": {
+            "android": "1:727974995113:android:6a864468378c85c1b1b5b8",
+            "ios": "1:727974995113:ios:9a5e09d276a68900b1b5b8",
+            "web": "1:727974995113:web:51229e56b1808f52b1b5b8"
+          }
+        }
+      }
+    }
+  },
+  "hosting": {
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}

@@ -54,6 +54,7 @@ dependencies:
   syncfusion_flutter_pdf: ^32.1.24
   qr_flutter: ^4.1.0
   step_progress: ^2.7.1
+  google_fonts: ^8.0.0
 
 dev_dependencies:
   flutter_test:
