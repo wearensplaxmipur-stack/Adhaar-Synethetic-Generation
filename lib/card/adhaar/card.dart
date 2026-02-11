@@ -234,7 +234,7 @@ class _A4PrintPageState extends State<A4PrintPage> {
                 left: x(0.137),
                 top: y(0.695),
                 child: pw.Text(
-                  "पुरुष / ",
+                  "${widget.model.gender.substring(0,5)} / ",
                   style: pw.TextStyle(
                     font: hindiFont,
                     fontSize: w*0.010,
@@ -280,7 +280,7 @@ class _A4PrintPageState extends State<A4PrintPage> {
 
               // VID & ADHAAR ID FRONT
               pw.Positioned(
-                left: x(0.137),
+                left: x(0.127),
                 top:y(0.773),
                 child: pw.Text(
                   breakEvery4(widget.model.adhaarId),
@@ -293,19 +293,31 @@ class _A4PrintPageState extends State<A4PrintPage> {
 
               //VID & ADHAAR BACK
               pw.Positioned(
-                left: x(0.55),
+                left: x(0.539),
                 top:y(0.765),
                 child: pw.Text(
                   breakEvery4(widget.model.adhaarId),
                   style: pw.TextStyle(
                     font: noto,
                     fontWeight: pw.FontWeight.bold,
-                    fontSize: w*0.016,
+                    fontSize: w*0.018,
                   ),
                 ),
               ),
+              /*pw.Positioned(
+                left: x(0.536),
+                top: y(0.7684),
+                child: pw.Container(
+                  width: w * 0.137,
+                  child: pw.Divider(
+                    thickness: 0.1,
+                    color: PdfColors.black,
+                  ),
+                ),
+              ),*/
+
               pw.Positioned(
-                left: x(0.54),
+                left: x(0.538),
                 top:y(0.778),
                 child: pw.Text(
                   "VID : "+breakEvery4(widget.model.vid),
@@ -355,6 +367,7 @@ class _A4PrintPageState extends State<A4PrintPage> {
     return pw.Font.ttf(data);
   }
 
+  String qrData2(AdhaarModel model) { return [ "AADHAAR:${model.adhaarId}", "VID:${model.vid}", "NAME:${model.name}", "FATHER:${model.fatherName}", "DOB:1999", "GENDER:${model.gender}", "ADDRESS:${model.address}", "ISSUED:${model.adhaarIssued}", "QRID:${model.qrId}", "SIGN:INDIA-GOV-AUTH-SECURE-VERIFIED", "HASH:${DateTime.now().millisecondsSinceEpoch}", ].join("|"); }
 
   //For English Text
   Widget epText({
