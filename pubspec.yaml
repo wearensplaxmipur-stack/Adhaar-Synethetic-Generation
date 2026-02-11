@@ -107,6 +107,10 @@ flutter:
       fonts:
         - asset: assets/fonts/NotoSerif-VariableFont_wdth,wght.ttf
 
+    - family: NotoSans
+      fonts:
+        - asset: assets/fonts/LiberationSans-Regular.ttf
+
     - family: IBMPlex
       fonts:
         - asset: assets/fonts/IBMPlexSansCondensed-Regular.ttf
@@ -122,6 +126,10 @@ flutter:
     - family: NotoSerifTamil
       fonts:
         - asset: assets/fonts/NotoSerifTamil-VariableFont_wdth,wght.ttf
+
+    - family: LibeartionSerifBold
+      fonts:
+        - asset: assets/fonts/LiberationSerif-Bold.ttf
 
           #       - asset: fonts/Schyler-Italic.ttf
           #         style: italic

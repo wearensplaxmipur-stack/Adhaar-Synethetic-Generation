@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
@@ -109,24 +110,35 @@ class _A4PrintPageState extends State<A4PrintPage> {
   }
 
   Future<void> generateTrueAadhaarPdf() async {
-    final double w = MediaQuery.of(context).size.width - 20;
-    final double h = w * a4Ratio; // auto A4 height
+    final pageFormat = PdfPageFormat.a4;
 
-    double x(double v) => w * v; // width based
-    double y(double v) => h * v; // height based
+    final double w = pageFormat.width;
+    final double h = pageFormat.height;
+
+    double x(double v) => w * v;
+    double y(double v) => h * v;
+
     final hindiFont = await loadFont(
       'assets/fonts/NotoSansDevanagari-VariableFont_wdth,wght.ttf',
     );
+    final tamil = await loadFont(
+      'assets/fonts/NotoSerifTamil-VariableFont_wdth,wght.ttf',
+    );
     final engFont = await loadFont(
-      'assets/fonts/LiberationSerif-Regular.ttf',
+      'assets/fonts/LiberationSans-Regular.ttf',
+    );
+    final noto = await loadFont(
+      'assets/fonts/liberation-sans.bold.ttf',
     );
     final bgBytes = (await rootBundle.load(
       'assets/adhaar.jpg',
     ))
         .buffer
         .asUint8List();
+    final photoImage = pw.MemoryImage(widget.model.photo!);
 
     final bgImage = pw.MemoryImage(bgBytes);
+    final qrDataString = qrData(widget.model);
 
     final pdf = pw.Document();
 
@@ -144,20 +156,164 @@ class _A4PrintPageState extends State<A4PrintPage> {
                 ),
               ),
 
-
+              // PHOTO ===============================>
               pw.Positioned(
-                left: x(0.4),
-                top: y(1.1),
-                child: pw.Text(
-                  widget.model.hindiName,
-                  style: pw.TextStyle(
-                    font: hindiFont,
-                    fontSize: w*0.1,
+                left: x(0.041),
+                top: y(0.663),
+                child: pw.Container(
+                  width: w * 0.083,
+                  height: w * 0.10,
+                  decoration: pw.BoxDecoration(
+                    image: pw.DecorationImage(
+                      image: photoImage,
+                      fit: pw.BoxFit.cover,
+                    ),
+                  ),
+                ),
+              ),
+              //QR CODE ---------------------------------------->
+              pw.Positioned(
+                left: x(0.6511),
+                top: y(0.6616),
+                child: pw.Container(
+                  width: w * 0.1395,
+                  height: w * 0.1395,
+                  color: PdfColors.white,
+                  child: pw.BarcodeWidget(
+                    barcode: pw.Barcode.qrCode(
+                      errorCorrectLevel: pw.BarcodeQRCorrectionLevel.low,
+                    ),
+                    data: qrDataString,
+                    width: w * 0.18,
+                    height: w * 0.18,
                   ),
                 ),
               ),
 
 
+
+
+              pw.Positioned(
+                left: x(0.137),
+                top: y(0.665),
+                child: pw.Text(
+                  widget.model.hindiName,
+                  style: pw.TextStyle(
+                    font: hindiFont,
+                    fontSize: w*0.011,
+                  ),
+                ),
+              ),
+              pw.Positioned(
+                left: x(0.137),
+                top: y(0.676),
+                child: pw.Text(
+                  widget.model.name,
+                  style: pw.TextStyle(
+                    font: engFont,
+                    fontSize: w*0.011,
+                  ),
+                ),
+              ),
+
+              // DOB ------------------------------------------------>
+              pw.Positioned(
+                left: x(0.20),
+                top: y(0.6856),
+                child: pw.Text(
+                  widget.model.adhaarIssued,
+                  style: pw.TextStyle(
+                    font: tamil,
+                    fontSize: w*0.0096,
+                  ),
+                ),
+              ),
+
+              //GENDER -------------------------------------->
+              pw.Positioned(
+                left: x(0.137),
+                top: y(0.695),
+                child: pw.Text(
+                  "पुरुष / ",
+                  style: pw.TextStyle(
+                    font: hindiFont,
+                    fontSize: w*0.010,
+                  ),
+                ),
+              ),
+              pw.Positioned(
+                left: x(0.165),
+                top: y(0.695),
+                child: pw.Text(
+                  "MALE",
+                  style: pw.TextStyle(
+                    font: engFont,
+                    fontSize: w*0.011,
+                  ),
+                ),
+              ),
+
+              //Addresss--------------------------------------->
+              pw.Positioned(
+                left: x(0.428),
+                top:  y(0.703),
+                child: pw.Text(
+                  "          "+widget.model.address,
+                  style: pw.TextStyle(
+                    font: engFont,
+                    fontSize: w*0.009,
+                  ),
+                ),
+              ),
+              pw.Positioned(
+                left: x(0.43),
+                top:y(0.669),
+                child: pw.Text(
+                  "          "+widget.model.hindiAddress,
+                  style: pw.TextStyle(
+                    font: hindiFont,
+                    fontSize: w*0.009,
+                  ),
+                ),
+              ),
+
+              // VID & ADHAAR ID FRONT
+              pw.Positioned(
+                left: x(0.137),
+                top:y(0.775),
+                child: pw.Text(
+                  breakEvery4(widget.model.adhaarId),
+                  style: pw.TextStyle(
+                    font: noto,
+                    fontSize: w*0.015,
+                  ),
+                ),
+              ),
+
+              //VID & ADHAAR BACK
+              pw.Positioned(
+                left: x(0.55),
+                top:y(0.765),
+                child: pw.Text(
+                  breakEvery4(widget.model.adhaarId),
+                  style: pw.TextStyle(
+                    font: noto,
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: w*0.015,
+                  ),
+                ),
+              ),
+              pw.Positioned(
+                left: x(0.54),
+                top:y(0.778),
+                child: pw.Text(
+                  "VID : "+breakEvery4(widget.model.vid),
+                  style: pw.TextStyle(
+                    font: noto,
+                    fontSize: w*0.010,
+                  ),
+                ),
+              ),
             ],
           );
         },
@@ -239,22 +395,62 @@ class _A4PrintPageState extends State<A4PrintPage> {
       ),
     );
   }
+  String randomHex(int length) {
+    const chars = 'abcdef0123456789';
+    final rand = Random();
+    return List.generate(length, (index) => chars[rand.nextInt(chars.length)]).join();
+  }
+
+  String randomBase64(int length) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+    final rand = Random();
+    return List.generate(length, (index) => chars[rand.nextInt(chars.length)]).join();
+  }
   String qrData(AdhaarModel model) {
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final random = Random();
+
     return [
+      // Core Identity
       "AADHAAR:${model.adhaarId}",
       "VID:${model.vid}",
       "NAME:${model.name}",
       "FATHER:${model.fatherName}",
-      "DOB:1999",
+      "MOTHER:${model.fatherName ?? "N/A"}",
+      "DOB:${model.adhaarIssued ?? "1999"}",
+      "AGE:${random.nextInt(60) + 18}",
       "GENDER:${model.gender}",
       "ADDRESS:${model.address}",
+      "PINCODE:${random.nextInt(899999) + 100000}",
+      "STATE:INDIA",
+      "COUNTRY:IN",
+      "NATIONALITY:INDIAN",
+
+      // Government-like Metadata
       "ISSUED:${model.adhaarIssued}",
-      "QRID:${model.qrId}",
-      "SIGN:INDIA-GOV-AUTH-SECURE-VERIFIED",
-      "HASH:${DateTime.now().millisecondsSinceEpoch}",
+      "EXPIRY:NEVER",
+      "STATUS:ACTIVE",
+      "AUTH_LEVEL:LEVEL-3",
+      "VERIFIED:YES",
+      "BIOMETRIC:ENABLED",
+      "IRIS_HASH:${randomHex(64)}",
+      "FINGERPRINT_HASH:${randomHex(64)}",
+      "FACE_HASH:${randomHex(64)}",
+
+      // Device & Scan Metadata
+      "SCAN_TIME:$timestamp",
+      "DEVICE_ID:${randomHex(32)}",
+      "TERMINAL_ID:IND-GOV-${random.nextInt(999999)}",
+      "LAT:${20 + random.nextDouble()}",
+      "LONG:${85 + random.nextDouble()}",
+      "ALT:${random.nextInt(500)}",
+
+
+
+
+      "END_OF_RECORD",
     ].join("|");
   }
-
   String breakEvery4(String input) {
     final buffer = StringBuffer();
     for (int i = 0; i < input.length; i++) {
