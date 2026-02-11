@@ -20,6 +20,13 @@ import 'package:flutter/services.dart' show rootBundle;
 
 
 const double a4Ratio = 297 / 210; // height / flutterfire configure --project=aadhaar-nsp-2026
+class HindiRenderResult {
+  final pw.MemoryImage image;
+  final double pixelWidth;
+  final double pixelHeight;
+
+  HindiRenderResult(this.image, this.pixelWidth, this.pixelHeight);
+}
 
 class A4PrintPage extends StatefulWidget {
   final AdhaarModel model;
@@ -108,18 +115,76 @@ class _A4PrintPageState extends State<A4PrintPage> {
 
     }
   }
+  Future<HindiRenderResult> renderHindiToImage(
+      String text,
+      double pdfFontSize,
+      ) async {
+
+    const double dpi = 300;
+    const double pdfToPx = dpi / 72;
+
+    final pixelFontSize = pdfFontSize * pdfToPx;
+
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: GoogleFonts.notoSansDevanagari(
+          fontSize: pixelFontSize,
+          color: Colors.black,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+
+    textPainter.layout();
+    textPainter.paint(canvas, Offset.zero);
+
+    final picture = recorder.endRecording();
+
+    final img = await picture.toImage(
+      textPainter.width.ceil(),
+      textPainter.height.ceil(),
+    );
+
+    final byteData =
+    await img.toByteData(format: ui.ImageByteFormat.png);
+
+    return HindiRenderResult(
+      pw.MemoryImage(byteData!.buffer.asUint8List()),
+      textPainter.width,
+      textPainter.height,
+    );
+  }
+
 
   Future<void> generateTrueAadhaarPdf() async {
-    final pageFormat = PdfPageFormat.a4;
-
-    final double w = pageFormat.width;
-    final double h = pageFormat.height;
+    final pageFormat = PdfPageFormat.a4 ;
+    final double w = pageFormat.width ;
+    final double h = pageFormat.height ;
 
     double x(double v) => w * v;
     double y(double v) => h * v;
+    const double dpi = 300;
+    const double pdfToPx = dpi / 72; // 4.1667
+
+    final pdfFontSize = w * 0.011;
+
+    final hindiNameResult =
+    await renderHindiToImage(widget.model.hindiName, pdfFontSize);
+    const double pxToPdf = 72 / dpi;
+
+    final pdfImageWidth =
+        hindiNameResult.pixelWidth * pxToPdf;
+
+    final pdfImageHeight =
+        hindiNameResult.pixelHeight * pxToPdf;
+
 
     final hindiFont = await loadFont(
-      'assets/fonts/NotoSansDevanagari-VariableFont_wdth,wght.ttf',
+      'assets/fonts/NotoSansDevanagari-Regular.ttf',
     );
     final tamil = await loadFont(
       'assets/fonts/NotoSerifTamil-VariableFont_wdth,wght.ttf',
@@ -158,7 +223,7 @@ class _A4PrintPageState extends State<A4PrintPage> {
 
               // PHOTO ===============================>
               pw.Positioned(
-                left: x(0.041),
+                left: x(0.0417),
                 top: y(0.663),
                 child: pw.Container(
                   width: w * 0.083,
@@ -189,11 +254,18 @@ class _A4PrintPageState extends State<A4PrintPage> {
                   ),
                 ),
               ),
-
-
-
-
               pw.Positioned(
+                left: x(0.137),
+                top: y(0.665),
+                child: pw.Image(
+                  hindiNameResult.image,
+                  width: pdfImageWidth,
+                  height: pdfImageHeight,
+                ),
+              ),
+
+
+              /*pw.Positioned(
                 left: x(0.137),
                 top: y(0.665),
                 child: pw.Text(
@@ -203,7 +275,7 @@ class _A4PrintPageState extends State<A4PrintPage> {
                     fontSize: w*0.011,
                   ),
                 ),
-              ),
+              ),*/
               pw.Positioned(
                 left: x(0.137),
                 top: y(0.676),
@@ -327,6 +399,23 @@ class _A4PrintPageState extends State<A4PrintPage> {
                   ),
                 ),
               ),
+
+              //Roated for LEFT FRONT
+              pw.Positioned(
+                left: x(0.0067),
+                top: y(0.674),
+                child: pw.Transform.rotate(
+                  angle: 3.1416 / 2,
+                  child: pw.Text(
+                    widget.model.details,
+                    style: pw.TextStyle(
+                      fontSize:w*0.008 ,
+                      font: noto,
+                    ),
+                  ),
+                ),
+              ),
+
             ],
           );
         },
@@ -465,6 +554,8 @@ class _A4PrintPageState extends State<A4PrintPage> {
       "END_OF_RECORD",
     ].join("|");
   }
+
+
   String breakEvery4(String input) {
     final buffer = StringBuffer();
     for (int i = 0; i < input.length; i++) {
@@ -597,8 +688,10 @@ class _A4PrintPageState extends State<A4PrintPage> {
                     padding: const EdgeInsets.all(8.0),
                     child: Image.asset("assets/adhaar.jpg",width: w,),
                   ),
+                  // Photo-===============================
                   Positioned(
-                    left: w*0.06,top: w*0.085,
+                    left: w*0.13,
+                    top: w*0.97,
                     child: Container(
                       width: w*0.0965,
                       height: w*0.115,
@@ -610,6 +703,7 @@ class _A4PrintPageState extends State<A4PrintPage> {
                       ),
                     ),
                   ),
+                  //Issued date=======================
                   Positioned(
                     left: x(0.03),
                     top: y(0.06),
@@ -625,13 +719,13 @@ class _A4PrintPageState extends State<A4PrintPage> {
                     ),
                   ),
                   Positioned(
-                    top: y(0.058),
-                    left: x(0.173),
+                    top: y(0.69),
+                    left: x(0.23),
                     child: Text(
                       m.hindiName,
                       style: GoogleFonts.notoSansDevanagari(
                         textStyle: const TextStyle(
-                          fontSize: 5.5,
+                          fontSize: 4,
                           height: 1.2,
                           color: Colors.black,
                           letterSpacing: 0,
@@ -640,24 +734,29 @@ class _A4PrintPageState extends State<A4PrintPage> {
                     ),
                   ),
                   // pText(text: "${m.hindiName}", top: y(0.06), left: x(0.173),fontFamily: "NotoSansDevanagari"),
-                  pText(text: '${m.name}', top: y(0.067), left: x(0.173),fontFamily: "LiberationSerif"),
-                  pText(text: m.details, top: y(0.078), left: x(0.253),fontFamily: "NotoSerifTamil"),
+                  pText(text: '${m.name}', top: y(0.695), left: x(0.23),fontFamily: "LiberationSerif"),
 
-                  pText(text: m.gender, top: y(0.088), left: x(0.173),fontFamily: "LiberationSerif"),
+                  // dob
+                  pText(text: m.details, top: y(0.707), left: x(0.29),fontFamily: "NotoSerifTamil"),
 
-                  epText(text: '${m.address}', top: y(0.112), left: x(0.53),fontFamily: "LiberationSerif",size: 4.8),
-                  epText(text: '${m.hindiAddress}', top: y(0.072), left: x(0.53),fontFamily: "NotoSansDevanagari",size: 4.8),
-                  pText(text: breakEvery4(m.adhaarId), top: y(0.189), left: x(0.173),fw: FontWeight.w900,size: 7.5,fontFamily: "NotoSerif"),
-                  Positioned(
-                    left: x(0.78),top: y(0.0552),
+                  pText(text: m.gender, top: y(0.72), left: x(0.23),fontFamily: "LiberationSerif"),
+
+                  epText(text: '${m.address}', top: y(0.701), left: x(0.53),fontFamily: "LiberationSerif",size: 3.8),
+                  epText(text: '${m.hindiAddress}', top: y(0.735), left: x(0.53),fontFamily: "NotoSansDevanagari",size: 3.8),
+                  pText(text: breakEvery4(m.adhaarId), top: y(0.795), left: x(0.21),fw: FontWeight.w900,size: 7.5,fontFamily: "NotoSerif"),
+
+
+                  //qr
+               Positioned(
+                    left: x(0.745),top: y(0.68),
                     child: Container(
-                        width: w*0.18,
-                        height: w*0.18,
+                        width: w*0.15,
+                        height: w*0.15,
                         color: Colors.white,
                         child: Container(
                             width: w*0.20,
                             height: w*0.20,
-                            child: QrImageView( data: qrData(m),
+                            child: QrImageView( data: qrData2(m),
                               gapless: true,
                               version: 11,
                               errorCorrectionLevel: QrErrorCorrectLevel.L, // denser than H in many cases
@@ -665,8 +764,8 @@ class _A4PrintPageState extends State<A4PrintPage> {
                     ),
                   ),
 
-                  pText(text: breakEvery4(m.adhaarId), top: y(0.178), left: x(0.66),fw: FontWeight.w900,size: 7.5,fontFamily: "NotoSerif"),
-                  pText(text:"VID : "+ breakEvery4(m.vid), top: y(0.193), left: x(0.62),fw: FontWeight.w400,size: 6.5,fontFamily: "NotoSerif"),
+                  pText(text: breakEvery4(m.adhaarId), top: y(0.783), left: x(0.62),fw: FontWeight.w900,size: 7.5,fontFamily: "NotoSerif"),
+                  pText(text:"VID : "+ breakEvery4(m.vid), top: y(0.797), left: x(0.61),fw: FontWeight.w400,size: 5,fontFamily: "NotoSerif"),
                 ],
               ),
             ),
