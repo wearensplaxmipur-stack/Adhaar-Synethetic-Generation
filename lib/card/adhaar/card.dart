@@ -173,11 +173,11 @@ class _A4PrintPageState extends State<A4PrintPage> {
               ),
               //QR CODE ---------------------------------------->
               pw.Positioned(
-                left: x(0.6511),
-                top: y(0.6616),
+                left: x(0.647),
+                top: y(0.658),
                 child: pw.Container(
-                  width: w * 0.1395,
-                  height: w * 0.1395,
+                  width: w * 0.145,
+                  height: w * 0.145,
                   color: PdfColors.white,
                   child: pw.BarcodeWidget(
                     barcode: pw.Barcode.qrCode(
@@ -254,24 +254,25 @@ class _A4PrintPageState extends State<A4PrintPage> {
               ),
 
               //Addresss--------------------------------------->
+
               pw.Positioned(
-                left: x(0.428),
-                top:  y(0.703),
+                left: x(0.431),
+                top:y(0.6692),
                 child: pw.Text(
-                  "          "+widget.model.address,
+                  "         "+widget.model.hindiAddress,
                   style: pw.TextStyle(
-                    font: engFont,
+                    font: hindiFont,
                     fontSize: w*0.009,
                   ),
                 ),
               ),
               pw.Positioned(
-                left: x(0.43),
-                top:y(0.669),
+                left: x(0.431),
+                top:  y(0.7025),
                 child: pw.Text(
-                  "          "+widget.model.hindiAddress,
+                  "        "+widget.model.address,
                   style: pw.TextStyle(
-                    font: hindiFont,
+                    font: engFont,
                     fontSize: w*0.009,
                   ),
                 ),
@@ -280,12 +281,12 @@ class _A4PrintPageState extends State<A4PrintPage> {
               // VID & ADHAAR ID FRONT
               pw.Positioned(
                 left: x(0.137),
-                top:y(0.775),
+                top:y(0.773),
                 child: pw.Text(
                   breakEvery4(widget.model.adhaarId),
                   style: pw.TextStyle(
                     font: noto,
-                    fontSize: w*0.015,
+                    fontSize: w*0.018,
                   ),
                 ),
               ),
@@ -299,7 +300,7 @@ class _A4PrintPageState extends State<A4PrintPage> {
                   style: pw.TextStyle(
                     font: noto,
                     fontWeight: pw.FontWeight.bold,
-                    fontSize: w*0.015,
+                    fontSize: w*0.016,
                   ),
                 ),
               ),
@@ -310,7 +311,7 @@ class _A4PrintPageState extends State<A4PrintPage> {
                   "VID : "+breakEvery4(widget.model.vid),
                   style: pw.TextStyle(
                     font: noto,
-                    fontSize: w*0.010,
+                    fontSize: w*0.011,
                   ),
                 ),
               ),
