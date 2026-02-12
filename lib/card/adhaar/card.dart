@@ -112,15 +112,16 @@ class _A4PrintPageState extends State<A4PrintPage> {
 
     }catch(e){
       chan(false);
-
     }
   }
+
+
   Future<HindiRenderResult> renderHindiToImage(
       String text,
       double pdfFontSize,
       ) async {
 
-    const double dpi = 300;
+    const double dpi = 720; // ULTRA sharp (desktop only)
     const double pdfToPx = dpi / 72;
 
     final pixelFontSize = pdfFontSize * pdfToPx;
@@ -134,19 +135,27 @@ class _A4PrintPageState extends State<A4PrintPage> {
         style: GoogleFonts.notoSansDevanagari(
           fontSize: pixelFontSize,
           color: Colors.black,
+          height: 1.0,
         ),
       ),
       textDirection: TextDirection.ltr,
     );
 
     textPainter.layout();
-    textPainter.paint(canvas, Offset.zero);
+
+    final extraPadding = pixelFontSize * 0.35;
+
+    final width = textPainter.width.ceilToDouble();
+    final height =
+    (textPainter.height + extraPadding).ceilToDouble();
+
+    textPainter.paint(canvas, Offset(0, extraPadding / 2));
 
     final picture = recorder.endRecording();
 
     final img = await picture.toImage(
-      textPainter.width.ceil(),
-      textPainter.height.ceil(),
+      width.toInt(),
+      height.toInt(),
     );
 
     final byteData =
@@ -154,10 +163,42 @@ class _A4PrintPageState extends State<A4PrintPage> {
 
     return HindiRenderResult(
       pw.MemoryImage(byteData!.buffer.asUint8List()),
-      textPainter.width,
-      textPainter.height,
+      width,
+      height,
     );
   }
+
+  List<pw.TextSpan> buildHindiSpans(String text, pw.Font font, double size) {
+    final List<pw.TextSpan> spans = [];
+
+    for (int i = 0; i < text.length; i++) {
+      String char = text[i];
+
+      // Detect matras
+      if (char == 'ि' && i > 0) {
+        // छोटी इ matra should appear before previous char
+        String prev = text[i - 1];
+
+        spans.removeLast(); // remove previous consonant
+        spans.add(pw.TextSpan(
+          text: char,
+          style: pw.TextStyle(font: font, fontSize: size),
+        ));
+        spans.add(pw.TextSpan(
+          text: prev,
+          style: pw.TextStyle(font: font, fontSize: size),
+        ));
+      } else {
+        spans.add(pw.TextSpan(
+          text: char,
+          style: pw.TextStyle(font: font, fontSize: size),
+        ));
+      }
+    }
+
+    return spans;
+  }
+
 
 
   Future<void> generateTrueAadhaarPdf() async {
@@ -167,20 +208,14 @@ class _A4PrintPageState extends State<A4PrintPage> {
 
     double x(double v) => w * v;
     double y(double v) => h * v;
-    const double dpi = 300;
-    const double pdfToPx = dpi / 72; // 4.1667
-
-    final pdfFontSize = w * 0.011;
-
-    final hindiNameResult =
-    await renderHindiToImage(widget.model.hindiName, pdfFontSize);
+    const double dpi = 720;
     const double pxToPdf = 72 / dpi;
+    final pdfFontSize = w * 0.010;
 
-    final pdfImageWidth =
-        hindiNameResult.pixelWidth * pxToPdf;
+    final hindiNameResult = await renderHindiToImage(widget.model.hindiName, pdfFontSize);
 
-    final pdfImageHeight =
-        hindiNameResult.pixelHeight * pxToPdf;
+    final pdfImageWidth = hindiNameResult.pixelWidth * pxToPdf;
+    final pdfImageHeight = hindiNameResult.pixelHeight * pxToPdf;
 
 
     final hindiFont = await loadFont(
@@ -254,9 +289,9 @@ class _A4PrintPageState extends State<A4PrintPage> {
                   ),
                 ),
               ),
-              pw.Positioned(
+              /*pw.Positioned(
                 left: x(0.137),
-                top: y(0.665),
+                top: y(0.666),
                 child: pw.Image(
                   hindiNameResult.image,
                   width: pdfImageWidth,
@@ -265,7 +300,7 @@ class _A4PrintPageState extends State<A4PrintPage> {
               ),
 
 
-              /*pw.Positioned(
+              pw.Positioned(
                 left: x(0.137),
                 top: y(0.665),
                 child: pw.Text(
@@ -276,6 +311,21 @@ class _A4PrintPageState extends State<A4PrintPage> {
                   ),
                 ),
               ),*/
+              pw.Positioned(
+                left: x(0.137),
+                top: y(0.666),
+                child: pw.RichText(
+                  text: pw.TextSpan(
+                    children: buildHindiSpans(
+                      widget.model.hindiName,
+                      hindiFont,
+                      w * 0.011,
+                    ),
+                  ),
+                ),
+              ),
+
+
               pw.Positioned(
                 left: x(0.137),
                 top: y(0.676),
