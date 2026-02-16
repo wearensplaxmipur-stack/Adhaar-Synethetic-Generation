@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
-
+import 'package:calendar_date_picker2/calendar_date_picker2.dart';
+import 'package:easy_date_timeline/easy_date_timeline.dart';
 import 'package:adhaar/card/adhaar/card.dart';
 import 'package:adhaar/global.dart';
 import 'package:flutter/material.dart';
@@ -18,20 +19,25 @@ Widget gField({
   required TextEditingController c,
   required String label,
   int maxLines = 1,
+  bool number = false,
+  String? Function(String?)? validator, // add this
 }) {
   return Padding(
     padding: const EdgeInsets.only(bottom: 12),
     child: TextFormField(
       controller: c,
       maxLines: maxLines,
+      keyboardType: number ? TextInputType.number : TextInputType.text,
       decoration: InputDecoration(
         labelText: label,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       ),
-      validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+      validator: validator ??
+              (v) => v == null || v.isEmpty ? 'Required' : null,
     ),
   );
 }
+
 
 // ================= PAGE =================
 class AdhaarFormPage extends StatefulWidget {
@@ -62,7 +68,20 @@ class _AdhaarFormPageState extends State<AdhaarFormPage> {
     stepProgressController = StepProgressController(totalSteps: 3);
     super.initState();
     genderC.text = "पुरुष/ MALE";
+
+    bool istest=false;
+    if(istest){
+      hNameC.text="आज़िया मोईनुद्दीन";
+      nameC.text="Aziya Khan";
+      fatherC.text="Ayush Khan";
+      hFatherC.text="आज़िया मोईनुद्दीन";
+      issuedC.text ="14/10/2003";
+      detailsC.text="14/10/2003";
+      vidC.text="6190264054241234";
+      adhaarIdC.text="619026405424";
+    }
   }
+  String addressso = "C/O";
   AdhaarModel? savedModel;
 
   pickImage(ImageSource source) async {
@@ -156,7 +175,6 @@ class _AdhaarFormPageState extends State<AdhaarFormPage> {
         );
         return shouldExit ?? false; // true = allow back
       },
-
       child: Scaffold(
         appBar: AppBar(title: const Text('Adhaar Form'),actions: [
         ],),
@@ -230,7 +248,7 @@ class _AdhaarFormPageState extends State<AdhaarFormPage> {
                   }
                   if(mypic==null){
                     const snackBar = SnackBar(content: Text('Please put Picture'));
-                    
+
                     ScaffoldMessenger.of(context).showSnackBar(snackBar);
                     return ;
                   }
@@ -258,7 +276,8 @@ class _AdhaarFormPageState extends State<AdhaarFormPage> {
 
                   setState(() => savedModel = model);
 
-                  Navigator.push(context, MaterialPageRoute(builder: (_)=>A4PrintPage(model: model)));
+                  Navigator.push(context, MaterialPageRoute(builder: (_)=>
+                      A4PrintPage(model: model,addressso: addressso,gender: full,)));
                   debugPrint("SAVED ADHAADEL => ${model.toJson()}");
 
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -274,6 +293,34 @@ class _AdhaarFormPageState extends State<AdhaarFormPage> {
       ),
     );
   }
+
+  Widget c(double w, String str)=>InkWell(
+    onTap: (){
+      setState(() {
+        addressso=str;
+      });
+    },
+    child: Container(
+      width: w/4-10,
+      height: 100,
+      decoration: BoxDecoration(
+        border:Border.all(
+          color:addressso==str?Colors.blue:Colors.grey,
+          width: 2,
+        ),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          addressso==str?Icon(Icons.select_all_outlined,color: Colors.blue,):Icon(Icons.select_all_outlined),
+          Text(str,style: TextStyle(fontWeight: FontWeight.w900),),
+        ],
+      ),
+    ),
+  );
+
   int  i = 0;
   bool english = false, hindi = false;
   Widget colum(double w){
@@ -316,7 +363,7 @@ class _AdhaarFormPageState extends State<AdhaarFormPage> {
               InkWell(
                 onTap: (){
                   setState(() {
-                    genderC.text = "पुरुष/ MALE";
+                    genderC.text = "पुरुष   / MALE";
                     full=!full;
                   });
                 },
@@ -343,7 +390,7 @@ class _AdhaarFormPageState extends State<AdhaarFormPage> {
               InkWell(
                 onTap: (){
                   setState(() {
-                    genderC.text = "महिला/ FEMALE";
+                    genderC.text = "महिला   / FEMALE";
                     full=!full;
                   });
                 },
@@ -374,6 +421,18 @@ class _AdhaarFormPageState extends State<AdhaarFormPage> {
     }else if(i==1){
       return Column(
         children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              c(w, "C/O"),
+              c(w,"S/O"),
+              c(w,"D/O"),
+              c(w,"W/O"),
+            ],
+          ),
+          SizedBox(
+            height: 10,
+          ),
               Row(
                 children: [
                   Container(
@@ -476,14 +535,103 @@ class _AdhaarFormPageState extends State<AdhaarFormPage> {
     return Column(
       children: [
         const SizedBox(height: 15),
-        gField(c: issuedC, label: 'Adhaar Issued Date ( DD/MM/YYY)'),
-        gField(c: detailsC, label: 'Dob as ( DD/MM/ YYYY )', maxLines: 2),
-        gField(c: adhaarIdC, label: 'Adhaar Number'),
-        gField(c: vidC, label: 'VID (Virtual ID)'),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+                width: w-100,
+                child: gField(c: issuedC, label: 'Adhaar Issued Date ( DD/MM/YYY)')),
+            calender(true)
+          ],
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+                width: w-100,
+                child: gField(c: detailsC, label: 'Dob as ( DD/MM/ YYYY )', maxLines: 1),),
+            calender(true)
+          ],
+        ),
+        gField(
+          c: adhaarIdC,
+          label: 'Adhaar Number',
+          number: true,
+          validator: (v) {
+            if (v == null || v.isEmpty) {
+              return 'Required';
+            }
+            if (v.length != 12) {
+              return 'Aadhaar must be exactly 12 digits';
+            }
+            return null;
+          },
+        ),
+        gField(
+          c: vidC,
+          label: 'VID (Virtual ID)',
+          number: true,
+          validator: (v) {
+            if (v == null || v.isEmpty) {
+              return null; // optional
+            }
+            if (v.length != 16) {
+              return 'VID must be exactly 16 digits';
+            }
+            return null;
+          },
+        ),
         const SizedBox(height: 40),
       ],
     );
   }
+
+  DateTime _selectedDate = DateTime.now();
+
+
+
+  Widget calender(bool issued) => InkWell(
+    onTap: () async {
+      final results = await showCalendarDatePicker2Dialog(
+        context: context,
+        config: CalendarDatePicker2WithActionButtonsConfig(
+          firstDate: DateTime(1910, 1, 1),
+          lastDate: DateTime(2030, 3, 18),
+          calendarType: CalendarDatePicker2Type.single,
+        ),
+        dialogSize: const Size(325, 400),
+        value: [_selectedDate],
+        borderRadius: BorderRadius.circular(12),
+      );
+
+      if (results != null && results.isNotEmpty) {
+        setState(() {
+          _selectedDate = results.first!;
+          final day = _selectedDate.day.toString().padLeft(2, '0');
+          final month = _selectedDate.month.toString().padLeft(2, '0');
+          final year = _selectedDate.year;
+
+          final formattedDate = "$day/$month/$year";
+
+          if (issued) {
+            issuedC.text = formattedDate;
+          } else {
+            detailsC.text = formattedDate;
+          }
+        });
+      }
+    },
+    child:  Container(
+        height: 60,width: 60,
+        decoration: BoxDecoration(
+          color: Colors.yellowAccent,
+          borderRadius: BorderRadius.circular(15)
+        ),
+        child: Icon(Icons.calendar_month)),
+  );
+
 
   bool full = true;
 

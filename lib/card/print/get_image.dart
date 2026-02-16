@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:adhaar/card/print/a4_2.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
@@ -19,6 +20,17 @@ class _GetImageState extends State<GetImage> {
     XFile? file = await picker.pickImage(source: source);
 
     if (file != null) {
+      if (kIsWeb) {
+        final bytes = await file.readAsBytes();
+        setState(() {
+          if(thisone){
+            mypic = bytes;
+          }else{
+            mypic2 = bytes;
+          }
+        });
+        return;
+      }
       final croppedFile = await ImageCropper().cropImage(
         sourcePath: file.path,
         uiSettings: [

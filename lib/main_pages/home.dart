@@ -6,6 +6,7 @@ import 'package:adhaar/card/print/get_image.dart';
 import 'package:adhaar/main.dart';
 import 'package:adhaar/passport/passport.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
@@ -278,6 +279,10 @@ class _HomeState extends State<Home> {
                             XFile? file = await picker.pickImage(source: ImageSource.gallery);
 
                             if (file != null) {
+                              if (kIsWeb) {
+                                final bytes = await file.readAsBytes();Navigator.push(context, MaterialPageRoute(builder: (_)=>A4GridPrintPassport(image: bytes)));
+                                return;
+                              }
                               final croppedFile = await ImageCropper().cropImage(
                                 sourcePath: file.path,
                                 uiSettings: [
@@ -345,7 +350,7 @@ class _HomeState extends State<Home> {
                                 onTap: (){
                                   Navigator.push(context,MaterialPageRoute(builder: (_)=>DefaultAddress(hindi: true)));
                                 },
-                                child: q(context,"assets/address2.png","Address English")),
+                                child: q(context,"assets/address2.png","Address Hindi")),
                             InkWell(
                                 onTap: () async {
 

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:path_provider/path_provider.dart';
@@ -10,6 +11,7 @@ import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../model/adhaar_model.dart';
+import '../../utils/helper.dart';
 
 
 
@@ -37,22 +39,7 @@ class _A4PrintPageState extends State<A4PrintPage> {
     return byteData!.buffer.asUint8List();
   }
 
-  Future<void> printA4() async {
-    final bytes = await captureWidget();
-    final pdf = pw.Document();
 
-    pdf.addPage(
-      pw.Page(
-        pageFormat: PdfPageFormat.a4,
-        build: (context) {
-          return pw.Center(
-            child: pw.Image(pw.MemoryImage(bytes), fit: pw.BoxFit.contain,dpi: 600),
-          );
-        },
-      ),
-    );
-    await Printing.layoutPdf(onLayout: (_) async => pdf.save());
-  }
   Widget pText({
     required String text,
     required double top,
@@ -73,32 +60,93 @@ class _A4PrintPageState extends State<A4PrintPage> {
       ),
     );
   }
-  Future<void> shareA4Pdf() async {
-    final bytes = await captureWidget();
+
+  Future<void> generateAndSaveA4(bool share) async {
+    changep(true);
+
     final pdf = pw.Document();
+
+    final img1 = pw.MemoryImage(widget.mypic);
+    final img2 = pw.MemoryImage(widget.mypic2);
 
     pdf.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
+        margin: pw.EdgeInsets.zero, // removes default padding
         build: (context) {
-          return pw.Center(
-            child: pw.Image(pw.MemoryImage(bytes), fit: pw.BoxFit.contain,dpi: 600),
+          final pageW = PdfPageFormat.a4.width;
+          final pageH = PdfPageFormat.a4.height;
+
+          return pw.Container(
+            width: pageW,
+            height: pageH,
+            color: PdfColors.white,
+            child: widget.full
+            // SIDE BY SIDE (ROW)
+                ? pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.center,
+              crossAxisAlignment: pw.CrossAxisAlignment.center,
+              children: [
+                pw.Image(
+                  img1,
+                  width: pageW / 2-15,
+                  fit: pw.BoxFit.contain,
+                ),
+                pw.SizedBox(width: 10),
+                pw.Image(
+                  img2,
+                  width: pageW / 2-15,
+                  fit: pw.BoxFit.contain,
+                ),
+              ],
+            )
+
+            // TOP & BOTTOM (COLUMN)
+                : pw.Column(
+              mainAxisAlignment: pw.MainAxisAlignment.center,
+              crossAxisAlignment: pw.CrossAxisAlignment.center,
+              children: [
+                pw.Image(
+                  img1,
+                  width: pageW -25,
+                  height: pageH / 2-15,
+                  fit: pw.BoxFit.contain,
+                ),
+                pw.SizedBox(height: 10),
+                pw.Image(
+                  img2,
+                  width: pageW -25,
+                  height: pageH / 2 - 15,
+                  fit: pw.BoxFit.contain,
+                ),
+              ],
+            ),
           );
         },
       ),
     );
 
-    final dir = await getTemporaryDirectory();
-    final file = File('${dir.path}/pdf_${DateTime.now().millisecondsSinceEpoch}.pdf');
+    final bytes = await pdf.save();
 
-    await file.writeAsBytes(await pdf.save());
+    if (share) {
+      await savePdf(bytes, "a4_output.pdf");
+      changep(false);
 
-    await Share.shareXFiles(
-      [XFile(file.path)],
-      text: 'Generated PDF',
-    );
+    } else {
+      await Printing.layoutPdf(onLayout: (_) async => bytes);
+      changep(false);
+    }
   }
 
+  void changep(bool s){
+    setState(() {
+      progress=s;
+    });
+  }
+
+
+
+  bool progress = false ;
   @override
   Widget build(BuildContext context) {
     final double w = MediaQuery.of(context).size.width - 20;
@@ -110,11 +158,13 @@ class _A4PrintPageState extends State<A4PrintPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('A4 Stack PDF Generator')),
       persistentFooterButtons: [
-        Row(
+        progress?Center(child: CircularProgressIndicator(),):Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             InkWell(
-              onTap: printA4,
+              onTap: (){
+                generateAndSaveA4(false);
+              },
               child: Container(
                 width: w/2-10,
                 height: 50,
@@ -130,8 +180,22 @@ class _A4PrintPageState extends State<A4PrintPage> {
               ),
             ),
             InkWell(
-              onTap: shareA4Pdf,
-              child: Container(
+              onTap: (){
+                generateAndSaveA4(true);
+              },
+              child: kIsWeb?Container(
+                width: w/2-10,
+                height: 50,
+                color: Colors.blue.shade800,
+                child: Row(
+                  mainAxisAlignment:MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.download,color: Colors.white,),
+                    SizedBox(width: 10,),
+                    Text("Download Pdf",style: TextStyle(color: Colors.white,fontWeight: FontWeight.w900),)
+                  ],
+                ),
+              ):Container(
                 width: w/2-10,
                 height: 50,
                 color: Colors.blue.shade800,

@@ -9,6 +9,8 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../utils/helper.dart';
+
 const double a4Ratio = 297 / 210; // height / width
 
 class A4GridPrintPassport extends StatefulWidget {
@@ -37,6 +39,7 @@ class _A4GridPrintPageState extends State<A4GridPrintPassport> {
 
   // ================= PRINT =================
   Future<void> printA4() async {
+    changep(true);
     final bytes = await captureWidget();
     final pdf = pw.Document();
 
@@ -51,37 +54,44 @@ class _A4GridPrintPageState extends State<A4GridPrintPassport> {
     );
 
     await Printing.layoutPdf(onLayout: (_) async => pdf.save());
+    changep(false);
+
   }
   final double photoWidthPt  = (3.5 / 2.54) * 72;  // ≈ 99.21 pt
   final double photoHeightPt = (4.5 / 2.54) * 72;  // ≈ 127.56 pt
 
   Future<void> shareA4Pdf() async {
+    changep(true);
+
     final bytes = await captureWidget();
     final pdf = pw.Document();
 
     pdf.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
-        build: (context) {
-          return pw.Center(
-            child: pw.Image(pw.MemoryImage(bytes), fit: pw.BoxFit.contain,dpi: 300),
-          );
-        },
+        build: (_) => pw.Center(
+          child: pw.Image(
+            pw.MemoryImage(bytes),
+            fit: pw.BoxFit.contain,
+            dpi: 300,
+          ),
+        ),
       ),
     );
 
-    final dir = await getTemporaryDirectory();
-    final file = File('${dir.path}/photo_${DateTime.now().millisecondsSinceEpoch}.pdf');
-
-    await file.writeAsBytes(await pdf.save());
-
-    await Share.shareXFiles(
-      [XFile(file.path)],
-      text: 'Generated PDF for picture',
-    );
+    final pdfBytes = await pdf.save();
+    await savePdf(pdfBytes, "passport_photos.pdf");
+    changep(false);
+  }
+  void changep(bool s){
+    setState(() {
+      progress=s;
+    });
   }
 
 
+
+  bool progress = false ;
   @override
   Widget build(BuildContext context) {
     final double w = MediaQuery.of(context).size.width - 20;
@@ -96,7 +106,7 @@ class _A4GridPrintPageState extends State<A4GridPrintPassport> {
       appBar: AppBar(title: const Text('A4 Grid Image Print')),
 
       persistentFooterButtons: [
-        Column(
+        progress?Center(child: CircularProgressIndicator(),):Column(
           children: [
             Text('Copies: $copies (Even only)'),
             Slider(

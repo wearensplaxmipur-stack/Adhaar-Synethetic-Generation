@@ -55,6 +55,9 @@ dependencies:
   qr_flutter: ^4.1.0
   step_progress: ^2.7.1
   google_fonts: ^8.0.0
+  image: ^4.5.4
+  easy_date_timeline: ^2.0.9
+  calendar_date_picker2: ^2.0.1
 
 dev_dependencies:
   flutter_test:
@@ -121,7 +124,7 @@ flutter:
 
     - family: NotoSansDevanagari
       fonts:
-        - asset: assets/fonts/NotoSansDevanagari-VariableFont_wdth,wght.ttf
+        - asset: assets/fonts/NotoSansDevanagari-Regular.ttf
 
     - family: NotoSerifTamil
       fonts:

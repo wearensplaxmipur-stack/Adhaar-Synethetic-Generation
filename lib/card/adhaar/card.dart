@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'package:adhaar/utils/helper.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -11,13 +12,16 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
-
 import '../../model/adhaar_model.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-
+import 'dart:typed_data';
+import 'package:flutter/services.dart';
+import 'package:syncfusion_flutter_pdf/pdf.dart';
+import 'package:syncfusion_flutter_pdf/pdf.dart';
+import 'package:syncfusion_flutter_pdf/pdf.dart' as sf;
+import 'package:printing/printing.dart';
 
 import 'package:flutter/services.dart' show rootBundle;
-
 
 const double a4Ratio = 297 / 210; // height / flutterfire configure --project=aadhaar-nsp-2026
 class HindiRenderResult {
@@ -29,8 +33,8 @@ class HindiRenderResult {
 }
 
 class A4PrintPage extends StatefulWidget {
-  final AdhaarModel model;
-  const A4PrintPage({super.key, required this.model});
+  final AdhaarModel model; final String addressso;final bool gender;
+  const A4PrintPage({super.key, required this.model,this.addressso="C/O",required this.gender});
 
   @override
   State<A4PrintPage> createState() => _A4PrintPageState();
@@ -53,78 +57,74 @@ class _A4PrintPageState extends State<A4PrintPage> {
     });
   }
 
-  Future<void> printA4() async {
-    try {
-      chan(true);
-      final bytes = await captureWidget();
-      final pdf = pw.Document();
 
-      pdf.addPage(
-        pw.Page(
-          pageFormat: PdfPageFormat.letter,
-          build: (context) {
-            return pw.Center(
-              child: pw.Image(
-                  pw.MemoryImage(bytes), fit: pw.BoxFit.contain, dpi: 700,),
-            );
-          },
-        ),
-      );
+  Future<pw.Widget> hindiImageWidget(
+      String text,
+      double pdfFontSize,
+      double pdfLeft,
+      double pdfTop,
+      double pageWidth,
+      double pageHeight,
+      ) async {
+    const double dpi = 1200;
+    const double pxToPdf = 72 / dpi;
 
-      await Printing.layoutPdf(onLayout: (_) async => pdf.save());
-      chan(false);
+    final result = await renderHindiToImage(text, pdfFontSize);
 
-    }catch(e){
-      chan(false);
-    }
+    final pdfWidth = result.pixelWidth * pxToPdf;
+    final pdfHeight = result.pixelHeight * pxToPdf;
+
+    double x(double v) => pageWidth * v;
+    double y(double v) => pageHeight * v;
+
+    return pw.Positioned(
+      left: x(pdfLeft),
+      top: y(pdfTop),
+      child: pw.Image(
+        result.image,
+        width: pdfWidth,
+        height: pdfHeight,
+      ),
+    );
   }
-  Future<void> shareA4Pdf() async {
-    try {
-      chan(true);
+  Future<pw.Widget> hindiImageWidget2(
+      String text,
+      double pdfFontSize,
+      double pdfLeft,
+      double pdfTop,
+      double pageWidth,
+      double pageHeight,
+      ) async {
+    const double dpi = 1200;
+    const double pxToPdf = 72 / dpi;
 
-      final bytes = await captureWidget();
-      final pdf = pw.Document();
+    final result = await renderHindiToImage(text, pdfFontSize);
 
-      pdf.addPage(
-        pw.Page(
-          pageFormat: PdfPageFormat.a4,
-          build: (context) {
-            return pw.Center(
-              child: pw.Image(
-                  pw.MemoryImage(bytes), fit: pw.BoxFit.contain, dpi: 600),
-            );
-          },
-        ),
-      );
+    final pdfWidth = result.pixelWidth * pxToPdf;
+    final pdfHeight = result.pixelHeight * pxToPdf;
 
-      final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/adhaar_${DateTime
-          .now()
-          .millisecondsSinceEpoch}.pdf');
+    double x(double v) => pageWidth * v;
+    double y(double v) => pageHeight * v;
 
-      await file.writeAsBytes(await pdf.save());
-
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        text: 'Generated Aadhaar PDF',
-      );
-      chan(false);
-
-    }catch(e){
-      chan(false);
-    }
+    return pw.Positioned(
+      left: x(pdfLeft),
+      top: y(pdfTop),
+      child: pw.Image(
+        result.image,
+        width: pdfWidth,
+        height: pdfHeight,
+      ),
+    );
   }
-
 
   Future<HindiRenderResult> renderHindiToImage(
       String text,
       double pdfFontSize,
       ) async {
-
-    const double dpi = 720; // ULTRA sharp (desktop only)
+    const double dpi = 1200;
     const double pdfToPx = dpi / 72;
 
-    final pixelFontSize = pdfFontSize * pdfToPx;
+    final pixelFontSize = (pdfFontSize * pdfToPx);
 
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
@@ -135,7 +135,7 @@ class _A4PrintPageState extends State<A4PrintPage> {
         style: GoogleFonts.notoSansDevanagari(
           fontSize: pixelFontSize,
           color: Colors.black,
-          height: 1.0,
+          height: 1.2,
         ),
       ),
       textDirection: TextDirection.ltr,
@@ -143,13 +143,23 @@ class _A4PrintPageState extends State<A4PrintPage> {
 
     textPainter.layout();
 
-    final extraPadding = pixelFontSize * 0.35;
+    // Better padding for Devanagari
+    final topPadding = pixelFontSize * 0.25;
+    final bottomPadding = pixelFontSize * 0.25;
 
     final width = textPainter.width.ceilToDouble();
     final height =
-    (textPainter.height + extraPadding).ceilToDouble();
+    (textPainter.height + topPadding + bottomPadding).ceilToDouble();
 
-    textPainter.paint(canvas, Offset(0, extraPadding / 2));
+    // White background
+    final bgPaint = Paint()..color = Colors.white;
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, width, height),
+      bgPaint,
+    );
+
+    // Paint text
+    textPainter.paint(canvas, Offset(0, topPadding));
 
     final picture = recorder.endRecording();
 
@@ -168,68 +178,185 @@ class _A4PrintPageState extends State<A4PrintPage> {
     );
   }
 
-  List<pw.TextSpan> buildHindiSpans(String text, pw.Font font, double size) {
-    final List<pw.TextSpan> spans = [];
 
-    for (int i = 0; i < text.length; i++) {
-      String char = text[i];
 
-      // Detect matras
-      if (char == 'ि' && i > 0) {
-        // छोटी इ matra should appear before previous char
-        String prev = text[i - 1];
+  String breakTextByWords(String text, {int maxChars = 60}) {
+    List<String> words = text.split(' ');
+    StringBuffer buffer = StringBuffer();
+    String currentLine = '';
 
-        spans.removeLast(); // remove previous consonant
-        spans.add(pw.TextSpan(
-          text: char,
-          style: pw.TextStyle(font: font, fontSize: size),
-        ));
-        spans.add(pw.TextSpan(
-          text: prev,
-          style: pw.TextStyle(font: font, fontSize: size),
-        ));
-      } else {
-        spans.add(pw.TextSpan(
-          text: char,
-          style: pw.TextStyle(font: font, fontSize: size),
-        ));
+    for (var word in words) {
+      if ((currentLine + word).length > maxChars) {
+        buffer.writeln(currentLine.trim());
+        currentLine = '';
       }
+      currentLine += '$word ';
     }
 
-    return spans;
+    if (currentLine.isNotEmpty) {
+      buffer.writeln(currentLine.trim());
+    }
+
+    return buffer.toString().trim();
+  }
+
+  Future<HindiRenderResult> renderHindiAddressToImage(
+      String text,
+      double pdfFontSize,
+      ) async {
+    const double dpi = 1200;
+    const double pdfToPx = dpi / 72;
+
+    final pixelFontSize = (pdfFontSize * pdfToPx);
+
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: GoogleFonts.notoSansDevanagari(
+          fontSize: pixelFontSize,
+          color: Colors.black,
+          height: 1.2,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+
+    textPainter.layout();
+
+    final smallTopPadding = pixelFontSize * 0.18; // very small padding
+
+    final width = textPainter.width.ceilToDouble();
+    final height =
+    (textPainter.height + smallTopPadding).ceilToDouble();
+
+    textPainter.paint(canvas, Offset(0, smallTopPadding));
+
+
+    // NO background
+    final picture = recorder.endRecording();
+
+    final img = await picture.toImage(
+      width.toInt(),
+      height.toInt(),
+    );
+
+    final byteData =
+    await img.toByteData(format: ui.ImageByteFormat.png);
+
+    return HindiRenderResult(
+      pw.MemoryImage(byteData!.buffer.asUint8List()),
+      width,
+      height,
+    );
+  }
+  Future<pw.Widget> hindiAddressImageWidget(
+      String text,
+      double pdfFontSize,
+      double pdfLeft,
+      double pdfTop,
+      double pageWidth,
+      double pageHeight,
+      ) async {
+    const double dpi = 1200;
+    const double pxToPdf = 72 / dpi;
+
+    final result = await renderHindiAddressToImage(text, pdfFontSize);
+
+    final pdfWidth = result.pixelWidth * pxToPdf;
+    final pdfHeight = result.pixelHeight * pxToPdf;
+
+    double x(double v) => pageWidth * v;
+    double y(double v) => pageHeight * v;
+
+    return pw.Positioned(
+      left: x(pdfLeft),
+      top: y(pdfTop),
+      child: pw.Image(
+        result.image,
+        width: pdfWidth,
+        height: pdfHeight,
+      ),
+    );
   }
 
 
-
-  Future<void> generateTrueAadhaarPdf() async {
+  Future<void> generateTrueAadhaarPdf(bool share) async {
+    changep(true);
     final pageFormat = PdfPageFormat.a4 ;
     final double w = pageFormat.width ;
     final double h = pageFormat.height ;
 
     double x(double v) => w * v;
     double y(double v) => h * v;
-    const double dpi = 720;
+    const double dpi = 1200;
     const double pxToPdf = 72 / dpi;
-    final pdfFontSize = w * 0.010;
-
+    final pdfFontSize = w * 0.0105;
     final hindiNameResult = await renderHindiToImage(widget.model.hindiName, pdfFontSize);
+    final hindiAddressWidget = await hindiAddressImageWidget(
+      "       " + breakTextByWords(widget.model.hindiAddress),
+      w * 0.010,
+      0.432,
+      0.668,
+      w,
+      h,
+    );
+
 
     final pdfImageWidth = hindiNameResult.pixelWidth * pxToPdf;
     final pdfImageHeight = hindiNameResult.pixelHeight * pxToPdf;
 
 
-    final hindiFont = await loadFont(
-      'assets/fonts/NotoSansDevanagari-Regular.ttf',
+    final hindiGenderWidget = await hindiImageWidget(
+      widget.model.gender.substring(0, 5),
+      w * 0.011,
+      0.137,
+      0.6946,
+      w,
+      h,
     );
-    final tamil = await loadFont(
-      'assets/fonts/NotoSerifTamil-VariableFont_wdth,wght.ttf',
+    // LEFT                    TOP
+    final gender = await hindiImageWidget(
+      "जन्म तिथि",
+      w * 0.011,
+      0.137,
+      0.685,
+      w,
+      h,
     );
-    final engFont = await loadFont(
-      'assets/fonts/LiberationSans-Regular.ttf',
+
+
+    final hindiFont = pw.Font.ttf(
+      await rootBundle.load(
+        'assets/fonts/NotoSansDevanagari-Regular.ttf',
+      ),
     );
-    final noto = await loadFont(
-      'assets/fonts/liberation-sans.bold.ttf',
+
+    final tamilFont = pw.Font.ttf(
+      await rootBundle.load(
+        'assets/fonts/NotoSerifTamil-VariableFont_wdth,wght.ttf',
+      ),
     );
+
+    final engFont = pw.Font.ttf(
+      await rootBundle.load(
+        'assets/fonts/LiberationSans-Regular.ttf',
+      ),
+    );
+
+    final notoBold = pw.Font.ttf(
+      await rootBundle.load(
+        'assets/fonts/liberation-sans.bold.ttf',
+      ),
+    );
+    final notoRegular = pw.Font.ttf(
+      await rootBundle.load(
+        'assets/fonts/LiberationSans-Regular.ttf',
+      ),
+    );
+
     final bgBytes = (await rootBundle.load(
       'assets/adhaar.jpg',
     ))
@@ -240,7 +367,15 @@ class _A4PrintPageState extends State<A4PrintPage> {
     final bgImage = pw.MemoryImage(bgBytes);
     final qrDataString = qrData(widget.model);
 
-    final pdf = pw.Document();
+    final pdf = pw.Document(
+      theme: pw.ThemeData.withFont(
+        base: hindiFont,
+        bold: notoBold,
+        italic: hindiFont,
+        boldItalic: notoBold,
+      ),
+    );
+
 
     pdf.addPage(
       pw.Page(
@@ -255,7 +390,14 @@ class _A4PrintPageState extends State<A4PrintPage> {
                   fit: pw.BoxFit.cover,
                 ),
               ),
-
+              pw.Positioned(
+                left: x(0.137),
+                top: y(0.664),
+                child: pw.Image( hindiNameResult.image,
+                  width: pdfImageWidth*1.05,
+                  height: pdfImageHeight*1.05,
+                ),
+              ),
               // PHOTO ===============================>
               pw.Positioned(
                 left: x(0.0417),
@@ -289,42 +431,6 @@ class _A4PrintPageState extends State<A4PrintPage> {
                   ),
                 ),
               ),
-              /*pw.Positioned(
-                left: x(0.137),
-                top: y(0.666),
-                child: pw.Image(
-                  hindiNameResult.image,
-                  width: pdfImageWidth,
-                  height: pdfImageHeight,
-                ),
-              ),
-
-
-              pw.Positioned(
-                left: x(0.137),
-                top: y(0.665),
-                child: pw.Text(
-                  widget.model.hindiName,
-                  style: pw.TextStyle(
-                    font: hindiFont,
-                    fontSize: w*0.011,
-                  ),
-                ),
-              ),*/
-              pw.Positioned(
-                left: x(0.137),
-                top: y(0.666),
-                child: pw.RichText(
-                  text: pw.TextSpan(
-                    children: buildHindiSpans(
-                      widget.model.hindiName,
-                      hindiFont,
-                      w * 0.011,
-                    ),
-                  ),
-                ),
-              ),
-
 
               pw.Positioned(
                 left: x(0.137),
@@ -337,67 +443,118 @@ class _A4PrintPageState extends State<A4PrintPage> {
                   ),
                 ),
               ),
+              gender,
 
               // DOB ------------------------------------------------>
               pw.Positioned(
-                left: x(0.20),
-                top: y(0.6856),
+                left: x(0.1773),
+                top: y(0.6869),
+                child: pw.Container(
+                  color: PdfColors.white,
+                  padding: pw.EdgeInsets.only(left: 1,right: 2),
+                  child: pw.Text(
+                    "/DOB:",
+                    style: pw.TextStyle(
+                      font: engFont,
+                      fontSize: w * 0.010,
+                    ),
+                  ),
+                ),
+              ),
+              pw.Positioned(
+                left: x(0.207),
+                top: y(0.6869),
                 child: pw.Text(
                   widget.model.adhaarIssued,
                   style: pw.TextStyle(
-                    font: tamil,
-                    fontSize: w*0.0096,
+                    font: notoRegular,
+                    fontSize: w*0.01,
                   ),
                 ),
               ),
-
-              //GENDER -------------------------------------->
-              pw.Positioned(
-                left: x(0.137),
-                top: y(0.695),
-                child: pw.Text(
-                  "${widget.model.gender.substring(0,5)} / ",
-                  style: pw.TextStyle(
-                    font: hindiFont,
-                    fontSize: w*0.010,
-                  ),
-                ),
-              ),
-              pw.Positioned(
+              hindiGenderWidget,
+              !(widget.gender)?pw.Positioned(
                 left: x(0.165),
-                top: y(0.695),
+                top: y(0.696),
                 child: pw.Text(
-                  "MALE",
+                  "/ FEMALE",
+                  style: pw.TextStyle(
+                    font: engFont,
+                    fontSize: w*0.011,
+                  ),
+                ),
+              ):pw.Positioned(
+                left: x(0.157),
+                top: y(0.696),
+                child: pw.Text(
+                  "/ MALE",
                   style: pw.TextStyle(
                     font: engFont,
                     fontSize: w*0.011,
                   ),
                 ),
               ),
+              //GENDER -------------------------------------->
+              /*pw.Positioned(
+                left: x(0.137),
+                top: y(0.695),
+                child: pw.RichText(
+                  text: pw.TextSpan(
+                    children: buildHindiSpans(
+                      fixHindiLigatures(widget.model.gender.substring(0,5)),
+                      hindiFont,
+                      w * 0.011,
+                    ),
+
+                  ),
+                ),
+              ),*/
+
 
               //Addresss--------------------------------------->
-
+              // English prefix
               pw.Positioned(
-                left: x(0.431),
-                top:y(0.6692),
-                child: pw.Text(
-                  "         "+widget.model.hindiAddress,
-                  style: pw.TextStyle(
-                    font: hindiFont,
-                    fontSize: w*0.009,
+                left: x(0.4289),
+                top: y(0.6692),
+                child: pw.Container(
+                  color: PdfColors.white,
+                  width: w/6,
+                  height: 10
+                ),
+              ),
+              hindiAddressWidget,
+              pw.Positioned(
+                left: x(0.4289),
+                top: y(0.6692),
+                child: pw.Container(
+                  padding: const pw.EdgeInsets.only(left: 1),
+                  child: pw.Text(
+                    widget.addressso + ":",
+                    style: pw.TextStyle(
+                      font: engFont,
+                      fontSize: w * 0.009,
+                    ),
                   ),
                 ),
               ),
+              // Hindi address image
+
               pw.Positioned(
-                left: x(0.431),
+                left: x(0.4289),
                 top:  y(0.7025),
-                child: pw.Text(
-                  "        "+widget.model.address,
-                  style: pw.TextStyle(
-                    font: engFont,
-                    fontSize: w*0.009,
+                child: pw.Container(
+                  color: PdfColors.white,
+                  padding: const pw.EdgeInsets.symmetric(
+                    horizontal: 1,
                   ),
-                ),
+                  child: pw.Text(
+                    widget.addressso+": "+breakTextByWords(widget.model.address,maxChars: 45),
+                    style: pw.TextStyle(
+                      font: engFont,
+                      fontSize: w*0.01,
+                    ),
+                  ),
+                )
               ),
 
               // VID & ADHAAR ID FRONT
@@ -407,7 +564,7 @@ class _A4PrintPageState extends State<A4PrintPage> {
                 child: pw.Text(
                   breakEvery4(widget.model.adhaarId),
                   style: pw.TextStyle(
-                    font: noto,
+                    font: notoBold,
                     fontSize: w*0.018,
                   ),
                 ),
@@ -420,31 +577,35 @@ class _A4PrintPageState extends State<A4PrintPage> {
                 child: pw.Text(
                   breakEvery4(widget.model.adhaarId),
                   style: pw.TextStyle(
-                    font: noto,
+                    font: notoBold,
                     fontWeight: pw.FontWeight.bold,
                     fontSize: w*0.018,
                   ),
                 ),
               ),
-              /*pw.Positioned(
-                left: x(0.536),
-                top: y(0.7684),
-                child: pw.Container(
-                  width: w * 0.137,
-                  child: pw.Divider(
-                    thickness: 0.1,
-                    color: PdfColors.black,
+              pw.Positioned(
+                left: x(0.52),
+                top: y(0.7779),
+                child: pw.Row(
+                  children: List.generate(
+                    253,
+                        (index) => pw.Container(
+                      width: 0.2,
+                      height: 0.2,
+                      margin: const pw.EdgeInsets.only(right: 0.2),
+                      //color: PdfColors.black
+                      color: PdfColors.grey500,
+                    ),
                   ),
                 ),
-              ),*/
-
+              ),
               pw.Positioned(
                 left: x(0.538),
                 top:y(0.778),
                 child: pw.Text(
-                  "VID : "+breakEvery4(widget.model.vid),
+                  widget.model.vid.isEmpty?"":("VID : "+breakEvery4(widget.model.vid)),
                   style: pw.TextStyle(
-                    font: noto,
+                    font: notoBold,
                     fontSize: w*0.011,
                   ),
                 ),
@@ -452,15 +613,15 @@ class _A4PrintPageState extends State<A4PrintPage> {
 
               //Roated for LEFT FRONT
               pw.Positioned(
-                left: x(0.0067),
-                top: y(0.674),
+                left: x(0.0069),
+                top: y(0.673),
                 child: pw.Transform.rotate(
                   angle: 3.1416 / 2,
                   child: pw.Text(
                     widget.model.details,
                     style: pw.TextStyle(
                       fontSize:w*0.008 ,
-                      font: noto,
+                      font: notoBold,
                     ),
                   ),
                 ),
@@ -472,13 +633,182 @@ class _A4PrintPageState extends State<A4PrintPage> {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (_) async => pdf.save(),
-    );
+    if(share){
+      final bytes = await pdf.save();
+      await savePdf(bytes, "aadhaar.pdf");
+      changep(false);
+
+    }else{
+      await Printing.layoutPdf(
+        onLayout: (_) async => pdf.save(),
+      );
+      changep(false);
+    }
+
+  }
+
+
+  void changep(bool s){
+    setState(() {
+      progress=s;
+    });
   }
 
 
 
+  bool progress = false ;
+  @override
+  Widget build(BuildContext context) {
+    final double w = MediaQuery.of(context).size.width - 20;
+    final double h = w * a4Ratio; // auto A4 height
+
+    double x(double v) => w * v; // width based
+    double y(double v) => h * v; // height based
+
+    final m = widget.model;
+    return Scaffold(
+      appBar: AppBar(title: const Text('DEMO ADHAAR ')),
+      persistentFooterButtons: [
+        progress?Center(child: CircularProgressIndicator()): Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            InkWell(
+              onTap: (){
+                generateTrueAadhaarPdf(false);
+              },
+              child: Container(
+                width: w/2-10,
+                height: 50,
+                color: Colors.red,
+                child: Row(
+                  mainAxisAlignment:MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.print,color: Colors.white,),
+                    SizedBox(width: 10,),
+                    Text("Print Pdf",style: TextStyle(color: Colors.white,fontWeight: FontWeight.w900),)
+                  ],
+                ),
+              ),
+            ),
+            InkWell(
+              onTap: () async {
+                generateTrueAadhaarPdf(true);
+              },
+              child:kIsWeb?Container(
+                width: w/2-10,
+                height: 50,
+                color: Colors.blue.shade800,
+                child: Row(
+                  mainAxisAlignment:MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.download,color: Colors.white,),
+                    SizedBox(width: 10,),
+                    Text("Download Pdf",style: TextStyle(color: Colors.white,fontWeight: FontWeight.w900),)
+                  ],
+                ),
+              ): Container(
+                width: w/2-10,
+                height: 50,
+                color: Colors.blue.shade800,
+                child: Row(
+                  mainAxisAlignment:MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.share,color: Colors.white,),
+                    SizedBox(width: 10,),
+                    Text("Share Pdf",style: TextStyle(color: Colors.white,fontWeight: FontWeight.w900),)
+                  ],
+                ),
+              ),
+            ),
+          ],
+        )
+      ],
+      body: SingleChildScrollView(
+        child: Center(
+          child: RepaintBoundary(
+            key: repaintKey,
+            child: Container(
+              width: w,
+              height: h,
+              color: Colors.white,
+              child: Stack(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Image.asset("assets/adhaar.jpg",width: w,),
+                  ),
+                  // Photo-===============================
+                  Positioned(
+                    left: w*0.13,
+                    top: w*0.97,
+                    child: Container(
+                      width: w*0.0965,
+                      height: w*0.115,
+                      decoration: BoxDecoration(
+                        image: DecorationImage(
+                          image: MemoryImage(widget.model.photo!),
+                          fit: BoxFit.cover
+                        )
+                      ),
+                    ),
+                  ),
+                  //Issued date=======================
+                  Positioned(
+                    top: y(0.69),
+                    left: x(0.23),
+                    child: Text(
+                      m.hindiName,
+                      style: GoogleFonts.notoSansDevanagari(
+                        textStyle: const TextStyle(
+                          fontSize: 4,
+                          height: 1.2,
+                          color: Colors.black,
+                          letterSpacing: 0,
+                        ),
+                      ),
+                    ),
+                  ),
+                  // pText(text: "${m.hindiName}", top: y(0.06), left: x(0.173),fontFamily: "NotoSansDevanagari"),
+                  pText(text: '${m.name}', top: y(0.695), left: x(0.23),fontFamily: "LiberationSerif"),
+
+                  // dob
+                  pText(text: m.details, top: y(0.707), left: x(0.29),fontFamily: "NotoSerifTamil"),
+
+                  pText(text: m.gender, top: y(0.72), left: x(0.23),fontFamily: "LiberationSerif"),
+
+                  epText(text: '${breakTextByWords(m.address)}', top: y(0.701), left: x(0.53),fontFamily: "LiberationSerif",size: 3.8),
+                  epText(text: '${breakTextByWords(m.hindiAddress)}', top: y(0.735), left: x(0.53),fontFamily: "NotoSansDevanagari",size: 3.8),
+                  pText(text: breakEvery4(m.adhaarId), top: y(0.795), left: x(0.21),fw: FontWeight.w900,size: 7.5,fontFamily: "NotoSerif"),
+
+
+                  //qr
+               Positioned(
+                    left: x(0.745),top: y(0.68),
+                    child: Container(
+                        width: w*0.15,
+                        height: w*0.15,
+                        color: Colors.white,
+                        child: Container(
+                            width: w*0.20,
+                            height: w*0.20,
+                            child: QrImageView( data: qrData2(m),
+                              gapless: true,
+                              version: 11,
+                              errorCorrectionLevel: QrErrorCorrectLevel.L, // denser than H in many cases
+                            ))
+                    ),
+                  ),
+
+                  pText(text: breakEvery4(m.adhaarId), top: y(0.783), left: x(0.62),fw: FontWeight.w900,size: 7.5,fontFamily: "NotoSerif"),
+                  pText(text:"VID : "+ breakEvery4(m.vid), top: y(0.797), left: x(0.61),fw: FontWeight.w400,size: 5,fontFamily: "NotoSerif"),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
   Widget pText({
     required String text,
     required double top,
@@ -613,216 +943,6 @@ class _A4PrintPageState extends State<A4PrintPage> {
       buffer.write(input[i]);
     }
     return buffer.toString();
-  }
-
-  Future<void> printA4Web() async {
-    chan(true);
-    final bytes = await captureWidget();
-
-    final pdf = pw.Document();
-    pdf.addPage(
-      pw.Page(
-        pageFormat: PdfPageFormat.a4,
-        build: (_) => pw.Image(
-          pw.MemoryImage(bytes),
-          fit: pw.BoxFit.contain,
-        ),
-      ),
-    );
-
-    await Printing.layoutPdf(
-      format: PdfPageFormat.a4,
-      onLayout: (_) async => pdf.save(),
-    );
-
-    chan(false);
-  }
-  Future<void> sharePdfWeb() async {
-    chan(true);
-    final bytes = await captureWidget();
-
-    final pdf = pw.Document();
-    pdf.addPage(
-      pw.Page(
-        pageFormat: PdfPageFormat.a4,
-        build: (_) => pw.Image(
-          pw.MemoryImage(bytes),
-          fit: pw.BoxFit.contain,
-        ),
-      ),
-    );
-
-    await Printing.sharePdf(
-      bytes: await pdf.save(),
-      filename: 'aadhaar.pdf',
-    );
-
-    chan(false);
-  }
-  bool progress = false ;
-  @override
-  Widget build(BuildContext context) {
-    final double w = MediaQuery.of(context).size.width - 20;
-    final double h = w * a4Ratio; // auto A4 height
-
-    double x(double v) => w * v; // width based
-    double y(double v) => h * v; // height based
-
-    final m = widget.model;
-    return Scaffold(
-      appBar: AppBar(title: const Text('A4 Stack PDF Generator')),
-      persistentFooterButtons: [
-        progress?Center(child: CircularProgressIndicator()): Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            InkWell(
-
-                onTap: () async {
-                  if (kIsWeb) {
-                    await printA4Web();
-                  } else {
-                    await printA4(); // your mobile share_plus code
-                  }
-              },
-              child: Container(
-                width: w/2-10,
-                height: 50,
-                color: Colors.red,
-                child: Row(
-                  mainAxisAlignment:MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.print,color: Colors.white,),
-                    SizedBox(width: 10,),
-                    Text("Print Pdf",style: TextStyle(color: Colors.white,fontWeight: FontWeight.w900),)
-                  ],
-                ),
-              ),
-            ),
-            InkWell(
-              onTap: () async {
-                if (kIsWeb) {
-                  await sharePdfWeb();
-                } else {
-                  await shareA4Pdf(); // your mobile share_plus code
-                }
-              },
-              child: Container(
-                width: w/2-10,
-                height: 50,
-                color: Colors.blue.shade800,
-                child: Row(
-                  mainAxisAlignment:MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.share,color: Colors.white,),
-                    SizedBox(width: 10,),
-                    Text("Share Pdf",style: TextStyle(color: Colors.white,fontWeight: FontWeight.w900),)
-                  ],
-                ),
-              ),
-            ),
-          ],
-        )
-      ],
-      floatingActionButton: FloatingActionButton(onPressed: generateTrueAadhaarPdf),
-      body: SingleChildScrollView(
-        child: Center(
-          child: RepaintBoundary(
-            key: repaintKey,
-            child: Container(
-              width: w,
-              height: h,
-              color: Colors.white,
-              child: Stack(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Image.asset("assets/adhaar.jpg",width: w,),
-                  ),
-                  // Photo-===============================
-                  Positioned(
-                    left: w*0.13,
-                    top: w*0.97,
-                    child: Container(
-                      width: w*0.0965,
-                      height: w*0.115,
-                      decoration: BoxDecoration(
-                        image: DecorationImage(
-                          image: MemoryImage(widget.model.photo!),
-                          fit: BoxFit.cover
-                        )
-                      ),
-                    ),
-                  ),
-                  //Issued date=======================
-                  Positioned(
-                    left: x(0.03),
-                    top: y(0.06),
-                    child: RotatedBox(
-                      quarterTurns: 3,
-                      child: Text(
-                        "Issued Date : ${m.adhaarIssued}",
-                        style: TextStyle(
-                          fontSize: 4.8,
-                          fontFamily: 'NotoSerif',letterSpacing: 0.1
-                        ),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    top: y(0.69),
-                    left: x(0.23),
-                    child: Text(
-                      m.hindiName,
-                      style: GoogleFonts.notoSansDevanagari(
-                        textStyle: const TextStyle(
-                          fontSize: 4,
-                          height: 1.2,
-                          color: Colors.black,
-                          letterSpacing: 0,
-                        ),
-                      ),
-                    ),
-                  ),
-                  // pText(text: "${m.hindiName}", top: y(0.06), left: x(0.173),fontFamily: "NotoSansDevanagari"),
-                  pText(text: '${m.name}', top: y(0.695), left: x(0.23),fontFamily: "LiberationSerif"),
-
-                  // dob
-                  pText(text: m.details, top: y(0.707), left: x(0.29),fontFamily: "NotoSerifTamil"),
-
-                  pText(text: m.gender, top: y(0.72), left: x(0.23),fontFamily: "LiberationSerif"),
-
-                  epText(text: '${m.address}', top: y(0.701), left: x(0.53),fontFamily: "LiberationSerif",size: 3.8),
-                  epText(text: '${m.hindiAddress}', top: y(0.735), left: x(0.53),fontFamily: "NotoSansDevanagari",size: 3.8),
-                  pText(text: breakEvery4(m.adhaarId), top: y(0.795), left: x(0.21),fw: FontWeight.w900,size: 7.5,fontFamily: "NotoSerif"),
-
-
-                  //qr
-               Positioned(
-                    left: x(0.745),top: y(0.68),
-                    child: Container(
-                        width: w*0.15,
-                        height: w*0.15,
-                        color: Colors.white,
-                        child: Container(
-                            width: w*0.20,
-                            height: w*0.20,
-                            child: QrImageView( data: qrData2(m),
-                              gapless: true,
-                              version: 11,
-                              errorCorrectionLevel: QrErrorCorrectLevel.L, // denser than H in many cases
-                            ))
-                    ),
-                  ),
-
-                  pText(text: breakEvery4(m.adhaarId), top: y(0.783), left: x(0.62),fw: FontWeight.w900,size: 7.5,fontFamily: "NotoSerif"),
-                  pText(text:"VID : "+ breakEvery4(m.vid), top: y(0.797), left: x(0.61),fw: FontWeight.w400,size: 5,fontFamily: "NotoSerif"),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
   }
 
 }
