@@ -64,6 +64,8 @@ class Users{
       send(context, "Incorrect password");
       throw 'Incorrect password';
     }
+    print("----------------------------------------->");
+    print(user);
 
     return user;
   }
@@ -99,6 +101,9 @@ class Users{
       thisUser = user;
 
       send(context, "User loaded");
+      print("----------------------------------------->");
+      print(user);
+
       return user;
     } catch (e) {
       send(context, e.toString());

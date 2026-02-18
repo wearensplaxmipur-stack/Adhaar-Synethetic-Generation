@@ -77,6 +77,12 @@ class _AddUserState extends State<AddUser> {
                 v == null || v.isEmpty ? "Required" : null,
               ),
               const SizedBox(height: 20),
+              SwitchListTile(
+                title: const Text("Admin User"),
+                value: isAdmin,
+                onChanged: (v) => setState(() => isAdmin = v),
+              ),
+              const SizedBox(height: 20),
               InkWell(
                 onTap: (){
                   if (_formKey.currentState!.validate()) {

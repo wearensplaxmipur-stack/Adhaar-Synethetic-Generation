@@ -117,11 +117,18 @@ class _SeeAllAdminState extends State<SeeAllAdmin> {
                           style: TextStyle(fontSize: 11),),
                       ),
                       SwitchListTile(
+                        title: const Text("Admin"),
+                        value: u.isadmin,
+                        onChanged: (v) =>
+                            updateField(u.id, "isadmin", v),
+                      ),
+                      SwitchListTile(
                         title: const Text("Active"),
                         value: u.ison,
                         onChanged: (v) =>
                             updateField(u.id, "ison", v),
                       ),
+
                     ],
                   ),
                 ),

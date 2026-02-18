@@ -83,9 +83,11 @@ class _A4PrintPageState extends State<A4PrintPage> {
             color: PdfColors.white,
             child: widget.full
             // SIDE BY SIDE (ROW)
-                ? pw.Row(
+                ? pw.Padding(
+                padding: pw.EdgeInsets.only(top: 15),
+                child: pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.center,
-              crossAxisAlignment: pw.CrossAxisAlignment.center,
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 pw.Image(
                   img1,
@@ -99,7 +101,7 @@ class _A4PrintPageState extends State<A4PrintPage> {
                   fit: pw.BoxFit.contain,
                 ),
               ],
-            )
+            ))
 
             // TOP & BOTTOM (COLUMN)
                 : pw.Column(

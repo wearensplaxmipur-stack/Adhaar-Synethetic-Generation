@@ -41,6 +41,8 @@ class A4PrintPage extends StatefulWidget {
 }
 
 class _A4PrintPageState extends State<A4PrintPage> {
+
+
   final GlobalKey repaintKey = GlobalKey();
 
   Future<Uint8List> captureWidget() async {
@@ -178,28 +180,6 @@ class _A4PrintPageState extends State<A4PrintPage> {
     );
   }
 
-
-
-  String breakTextByWords(String text, {int maxChars = 60}) {
-    List<String> words = text.split(' ');
-    StringBuffer buffer = StringBuffer();
-    String currentLine = '';
-
-    for (var word in words) {
-      if ((currentLine + word).length > maxChars) {
-        buffer.writeln(currentLine.trim());
-        currentLine = '';
-      }
-      currentLine += '$word ';
-    }
-
-    if (currentLine.isNotEmpty) {
-      buffer.writeln(currentLine.trim());
-    }
-
-    return buffer.toString().trim();
-  }
-
   Future<HindiRenderResult> renderHindiAddressToImage(
       String text,
       double pdfFontSize,
@@ -295,15 +275,15 @@ class _A4PrintPageState extends State<A4PrintPage> {
     const double pxToPdf = 72 / dpi;
     final pdfFontSize = w * 0.0105;
     final hindiNameResult = await renderHindiToImage(widget.model.hindiName, pdfFontSize);
+    String s = widget.addressso=="W/O"?"        ":"       ";
     final hindiAddressWidget = await hindiAddressImageWidget(
-      "       " + breakTextByWords(widget.model.hindiAddress),
+      s + widget.model.hindiAddress,
       w * 0.010,
-      0.432,
+      0.431,
       0.668,
       w,
       h,
     );
-
 
     final pdfImageWidth = hindiNameResult.pixelWidth * pxToPdf;
     final pdfImageHeight = hindiNameResult.pixelHeight * pxToPdf;
@@ -548,7 +528,7 @@ class _A4PrintPageState extends State<A4PrintPage> {
                     horizontal: 1,
                   ),
                   child: pw.Text(
-                    widget.addressso+": "+breakTextByWords(widget.model.address,maxChars: 45),
+                    widget.addressso+": "+widget.model.address,
                     style: pw.TextStyle(
                       font: engFont,
                       fontSize: w*0.01,
@@ -776,8 +756,8 @@ class _A4PrintPageState extends State<A4PrintPage> {
 
                   pText(text: m.gender, top: y(0.72), left: x(0.23),fontFamily: "LiberationSerif"),
 
-                  epText(text: '${breakTextByWords(m.address)}', top: y(0.701), left: x(0.53),fontFamily: "LiberationSerif",size: 3.8),
-                  epText(text: '${breakTextByWords(m.hindiAddress)}', top: y(0.735), left: x(0.53),fontFamily: "NotoSansDevanagari",size: 3.8),
+                  epText(text: '${m.address}', top: y(0.701), left: x(0.53),fontFamily: "LiberationSerif",size: 3.8),
+                  epText(text: '${m.hindiAddress}', top: y(0.735), left: x(0.53),fontFamily: "NotoSansDevanagari",size: 3.8),
                   pText(text: breakEvery4(m.adhaarId), top: y(0.795), left: x(0.21),fw: FontWeight.w900,size: 7.5,fontFamily: "NotoSerif"),
 
 

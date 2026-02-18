@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:adhaar/card/adhaar/slider/slide.dart';
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:easy_date_timeline/easy_date_timeline.dart';
 import 'package:adhaar/card/adhaar/card.dart';
@@ -27,7 +28,7 @@ Widget gField({
     child: TextFormField(
       controller: c,
       maxLines: maxLines,
-      keyboardType: number ? TextInputType.number : TextInputType.text,
+      keyboardType: number ? TextInputType.number : TextInputType.multiline,
       decoration: InputDecoration(
         labelText: label,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -62,11 +63,56 @@ class _AdhaarFormPageState extends State<AdhaarFormPage> {
   final vidC = TextEditingController();
   final adhaarIdC = TextEditingController();
   late StepProgressController stepProgressController;
+  double hindiFirst = 15;
+  double hindiSecond = 32;
+  double englishFirst = 15;
+  double englishSecond = 32;
+  static const String keyHindiFirst = 'hindifirst';
+  static const String keyHindiSecond = 'hindisecond';
+  static const String keyEnglishFirst = 'englishfirst';
+  static const String keyEnglishSecond = 'englishsecond';
 
+  Future<void> _loadSavedValues() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      hindiFirst = prefs.getDouble(keyHindiFirst) ?? 15;
+      hindiSecond = prefs.getDouble(keyHindiSecond) ?? 32;
+      englishFirst = prefs.getDouble(keyEnglishFirst) ?? 15;
+      englishSecond = prefs.getDouble(keyEnglishSecond) ?? 32;
+    });
+  }
+  Widget gField({
+    required TextEditingController c,
+    required String label,
+    int maxLines = 1,
+    bool number = false,
+    String? Function(String?)? validator, // add this
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextFormField(
+        controller: c,
+        maxLines: maxLines,
+        keyboardType: number ? TextInputType.number : TextInputType.multiline,
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+        onChanged: (String s){
+          setState(() {
+
+          });
+        },
+        validator: validator ??
+                (v) => v == null || v.isEmpty ? 'Required' : null,
+      ),
+    );
+  }
   @override
   void initState(){
     stepProgressController = StepProgressController(totalSteps: 3);
     super.initState();
+    _loadSavedValues();
     genderC.text = "पुरुष/ MALE";
 
     bool istest=false;
@@ -258,13 +304,14 @@ class _AdhaarFormPageState extends State<AdhaarFormPage> {
                     ScaffoldMessenger.of(context).showSnackBar(snackBar);
                     return ;
                   }
+
                   AdhaarModel model = AdhaarModel(
                     name: nameC.text.trim(),
                     fatherName: fatherC.text.trim(),
                     hindiName: hNameC.text.trim(),
                     hindiFatherName: hFatherC.text.trim(),
-                    address: addressC.text.trim(),
-                    hindiAddress: hAddressC.text.trim(),
+                    address: fatherC.text.trim()+", "+addressC.text.trim(),
+                    hindiAddress: hFatherC.text.trim()+", "+ hAddressC.text.trim(),
                     adhaarIssued: issuedC.text.trim(),
                     details: detailsC.text.trim(),
                     gender: genderC.text.trim(),
@@ -288,6 +335,64 @@ class _AdhaarFormPageState extends State<AdhaarFormPage> {
                 child: Global.button(w-70, "Continue"),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget textWithLineCounter({
+    required String text,
+    required double firstLineMaxx,
+    required double secondLineMaxx,
+  }) {
+    List<String> lines = text.split('\n');
+     int firstLineMax = firstLineMaxx.toInt();
+     int secondLineMax = secondLineMaxx.toInt();
+    bool allCorrect = true;
+
+    for (int i = 0; i < lines.length; i++) {
+      int current = lines[i].characters.length;
+      int max = i == 0 ? firstLineMax : secondLineMax;
+      if (current > max) {
+        allCorrect = false;
+        break;
+      }
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: allCorrect ? Colors.green.shade100 : Colors.red.shade100,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: allCorrect ? Colors.green : Colors.red,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            allCorrect ? Icons.check_circle : Icons.error,
+            color: allCorrect ? Colors.green : Colors.red,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: List.generate(lines.length, (index) {
+                int current = lines[index].characters.length;
+                int max = index == 0 ? firstLineMax : secondLineMax;
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    'Line ${index + 1} : $current/$max',
+                    style: const TextStyle(fontSize: 9),
+                  ),
+                );
+              }),
+            ),
           ),
         ],
       ),
@@ -436,10 +541,10 @@ class _AdhaarFormPageState extends State<AdhaarFormPage> {
               Row(
                 children: [
                   Container(
-                    width: w-60,
+                    width: w-120,
                     height: 50,
                     child: CheckboxListTile(
-                      title: Text("Use Default English Address"),
+                      title: Text("Default English Address"),
                       value: english,
                       onChanged: (newValue) {
                         setState(() async {
@@ -475,19 +580,28 @@ class _AdhaarFormPageState extends State<AdhaarFormPage> {
                           english=true;
                         });},
                       child: Icon(Icons.edit_note_sharp,color: Colors.deepOrange,size: 30,)),
+                  InkWell(
+                      onTap: () async {
+                        await Navigator.push(context, MaterialPageRoute(builder: (_)=>TwoSliderPage()));
+                        _loadSavedValues();
+                      },
+                      child: Icon(Icons.sign_language,color: Colors.red,size: 33,)),
                 ],
               ),
           SizedBox(
             height: 10,
           ),
-          gField(c: addressC, label: 'Address', maxLines: 3),
+          textWithLineCounter( text: fatherC.text.trim()+", "+addressC.text, firstLineMaxx: englishFirst, secondLineMaxx: englishSecond),
+          SizedBox(
+            height: 10,
+          ),gField(c: addressC, label: 'Address', maxLines: 6),
           Row(
             children: [
               Container(
-                width: w-60,
+                width: w-120,
                 height: 50,
                 child: CheckboxListTile(
-                  title: Text("Use Default Hindi Address"),
+                  title: Text("Default Hindi Address"),
                   value: hindi,
                   onChanged: (newValue) {
                     setState(() async {
@@ -522,13 +636,26 @@ class _AdhaarFormPageState extends State<AdhaarFormPage> {
                       hAddressC.text = str;
                       hindi=true;
                     });},
-                  child: Icon(Icons.edit_note_sharp,color: Colors.deepOrange,size: 30,)),
+                  child: Icon(Icons.edit_note_sharp,color: Colors.deepOrange,size: 35,)),
+              InkWell(
+                  onTap: () async {
+                    await Navigator.push(context, MaterialPageRoute(builder: (_)=>TwoSliderPage()));
+                    _loadSavedValues();
+                  },
+                  child: Icon(Icons.sign_language,color: Colors.red,size: 33,)),
             ],
           ),
           SizedBox(
             height: 10,
           ),
-          gField(c: hAddressC, label: 'Hindi Address', maxLines: 3),
+          textWithLineCounter( text:hFatherC.text.trim()+", "+ hAddressC.text, firstLineMaxx: hindiFirst, secondLineMaxx: hindiSecond),
+          SizedBox(
+            height: 10,
+          ),gField(c: hAddressC, label: 'Hindi Address', maxLines: 6),
+
+          SizedBox(
+            height: 160,
+          ),
         ],
       );
     }
